@@ -16,7 +16,9 @@ def get_js_data_with_selenium(url):
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    options.add_argument(
+        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    )
 
     # Правильное создание драйвера
     service = Service(ChromeDriverManager().install())
@@ -40,7 +42,8 @@ def get_js_data_with_selenium(url):
         print(f"Длина HTML: {len(page_source)} символов")
 
         # Способ 2: Выполнить простой JavaScript код
-        js_data = driver.execute_script("""
+        js_data = driver.execute_script(
+            """
             // Простой и безопасный JavaScript код
             return {
                 title: document.title,
@@ -50,15 +53,18 @@ def get_js_data_with_selenium(url):
                 hasBody: !!document.body,
                 readyState: document.readyState
             };
-        """)
+        """
+        )
 
-        print("Данные из JavaScript:", json.dumps(js_data, indent=2, ensure_ascii=False))
+        print(
+            "Данные из JavaScript:", json.dumps(js_data, indent=2, ensure_ascii=False)
+        )
 
         # Способ 3: Поиск элементов с правильными селекторами
         try:
             # Пробуем разные селекторы для матчей
             selectors = [
-                '.results-item',
+                ".results-item",
                 # '.js-match-item',
                 # '.fav-item',
                 # '[class*="match"]',
@@ -71,10 +77,12 @@ def get_js_data_with_selenium(url):
                 try:
                     elements = driver.find_elements(By.CSS_SELECTOR, selector)
                     if elements:
-                        print(f"Селектор '{selector}': найдено {len(elements)} элементов")
+                        print(
+                            f"Селектор '{selector}': найдено {len(elements)} элементов"
+                        )
                         for i, element in enumerate(elements[:]):
                             try:
-                                text = element.text.replace('\n', ' ').strip()
+                                text = element.text.replace("\n", " ").strip()
                                 if text and len(text) > 10:
                                     print(f"  Элемент {i + 1}: {text[:100]}...")
                             except:
@@ -88,13 +96,15 @@ def get_js_data_with_selenium(url):
 
         # Способ 4: Поиск по тексту
         try:
-            all_elements = driver.find_elements(By.XPATH,
-                                                "//*[contains(text(), 'матч') or contains(text(), 'игра') or contains(text(), 'score')]")
+            all_elements = driver.find_elements(
+                By.XPATH,
+                "//*[contains(text(), 'матч') or contains(text(), 'игра') or contains(text(), 'score')]",
+            )
             print(f"Элементов с текстом матча: {len(all_elements)}")
 
             for i, element in enumerate(all_elements[:5]):
                 try:
-                    text = element.text.replace('\n', ' ').strip()
+                    text = element.text.replace("\n", " ").strip()
                     if text and len(text) > 5:
                         print(f"Текстовый элемент {i + 1}: {text[:80]}...")
                 except:
@@ -111,7 +121,7 @@ def get_js_data_with_selenium(url):
 
 # Запуск
 urls = [
-    'https://www.championat.com/stat/hockey/#2025-09-07',
+    "https://www.championat.com/stat/hockey/#2025-09-07",
     # 'https://www.championat.com/stat/hockey/#2025-09-06',
     # 'https://www.championat.com/stat/hockey/#2025-09-05'
 ]
