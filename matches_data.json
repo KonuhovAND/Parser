@@ -1,0 +1,13 @@
+{
+  "source_url": "https://www.championat.com/stat/hockey/#2025-09-07",
+  "matches_found": 1,
+  "matches": [
+    {
+      "text": "13:30 Сибирь – Амур 0 : 2 окончен",
+      "url": "https://www.championat.com/hockey/_superleague/tournament/6608/match/1256696/",
+      "selector": ".results-item.js-match-item.fav-item.js-fav-item._is-end._not-started",
+      "lineups": []
+    }
+  ],
+  "timestamp": "2025-09-08 14:24:52"
+}
