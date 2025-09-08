@@ -5,9 +5,9 @@
     {
       "text": "13:30 Сибирь – Амур 0 : 2 окончен",
       "url": "https://www.championat.com/hockey/_superleague/tournament/6608/match/1256696/",
-      "selector": ".results-item.js-match-item.fav-item.js-fav-item._is-end._not-started",
+      "selector": ".results-item",
       "lineups": []
     }
   ],
-  "timestamp": "2025-09-08 14:24:52"
+  "timestamp": "2025-09-08 14:31:18"
 }

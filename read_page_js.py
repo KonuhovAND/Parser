@@ -104,14 +104,8 @@ def get_js_data_with_selenium(url):
         # time.sleep(3)  # Даем время на полную загрузку
 
         # Сохраняем основную страницу для отладки
-        main_page_source = driver.page_source
-        with open("main_page.html", "w", encoding="utf-8") as f:
-            f.write(main_page_source)
-        print("Основная страница сохранена в main_page.html")
-
-        # Ищем элементы матчей с ссылками
         match_selectors = [
-            ".results-item.js-match-item.fav-item.js-fav-item._is-end._not-started",
+            ".results-item",
             # ".results-item",
             # ".js-match-item",
             # '[class*="match"]',
