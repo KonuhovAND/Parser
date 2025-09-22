@@ -138,7 +138,7 @@ def get_js_data_with_selenium(url):
 
     try:
         driver.get(url)
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 3).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         time.sleep(1)
