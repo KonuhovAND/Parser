@@ -62,7 +62,7 @@ def parse_match_lineups(driver, match_url):
         driver.switch_to.window(driver.window_handles[1])
         driver.get(match_url)
 
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         time.sleep(1)
@@ -101,7 +101,7 @@ def parse_match_lineups(driver, match_url):
         driver.close()
         driver.switch_to.window(main_window)
         driver.refresh()
-        WebDriverWait(driver, 10).until(
+        WebDriverWait(driver, 3).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         time.sleep(1)
@@ -138,7 +138,7 @@ def get_js_data_with_selenium(url):
 
     try:
         driver.get(url)
-        WebDriverWait(driver, 15).until(
+        WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         time.sleep(1)
