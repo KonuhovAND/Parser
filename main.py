@@ -12,7 +12,7 @@ if __name__ == "__main__":
     
     all_new_matches = []
     start = time.time()
-    with open("matches_data.json", "w", encoding="utf-8") as f:
+    with open("matches_data.json", "w", encoding="utf-8") as f:    
         for url in urls:
             print(f"Парсим страницу: {url}")
             matches = get_js_data_with_selenium(url)

@@ -65,7 +65,7 @@ def parse_match_lineups(driver, match_url):
         WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        time.sleep(1)
+        time.sleep(.5)
 
         # Ищем все элементы с именами игроков
         player_elements = driver.find_elements(By.CLASS_NAME, "table-item__name")
@@ -104,9 +104,9 @@ def parse_match_lineups(driver, match_url):
         WebDriverWait(driver, 3).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        time.sleep(1)
-
+        time.sleep(.5)
         return lineup_data
+    
 
     except Exception as e:
         print(f"Ошибка при парсинге составов: {e}")
@@ -141,7 +141,7 @@ def get_js_data_with_selenium(url):
         WebDriverWait(driver, 3).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        time.sleep(1)
+        time.sleep(.5)
 
         match_selectors = [".results-item", ".tournament-item", ".js-match-item"]
         processed_urls = set()
