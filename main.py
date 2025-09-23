@@ -9,7 +9,6 @@ if __name__ == "__main__":
     
     print("Запуск улучшенного парсера...")
     
-    
     all_new_matches = []
     start = time.time()
     with open("matches_data.json", "w", encoding="utf-8") as f:    
