@@ -54,7 +54,7 @@ def save_to_json(data, filename="matches_data.json"):
     print(f"Добавлено новых матчей: {len(new_matches)}")
     return len(new_matches)
 
-def parse_match_lineups(driver, match_url):
+def parse_match_lineups(driver, match_url,sum_score):
     
     
     """Парсит составы команд на странице матча и разделяет на две команды"""
@@ -69,20 +69,18 @@ def parse_match_lineups(driver, match_url):
         WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        time.sleep(.5)
+        time.sleep(1)
 
         # Ищем все элементы с именами игроков
         player_elements = driver.find_elements(By.CLASS_NAME, "table-item__name")
         player_names = set()
         
         # Ищем элементы с голами
-        goals_elements_team1 = driver.find_elements(By.CLASS_NAME, "_team1")
-        goals_elements_team2 = driver.find_elements(By.CLASS_NAME, "_team2")
-
+        goals_elements_team1 = driver.find_elements(By.CSS_SELECTOR, ".match-stat__player")
         # Списки для хранения игроков и голов
         team_1_players_goals = set()
         team_2_players_goals = set()
-        
+        kick_offs = []
         print("Trying to parse players...")
         for element in player_elements:
             try:
@@ -93,44 +91,33 @@ def parse_match_lineups(driver, match_url):
             except:
                 continue        
         player_names = list(player_names)
-
-        print("Trying to parse goals for team 1...")
-        for element in goals_elements_team1:
-            try:
-                # time_goal = driver.find_element(By.CLASS_NAME, "match-stat__main-value").text.strip()
-                text = element.text.strip()
-                team_1_players_goals.add(text)
-                # team_1_players_goals[text] = time_goal
-            except:
-                continue
-        team_1_players_goals = list(team_1_players_goals)
-        
-        
-        print("Trying to parse goals for team 2...")
-        for element in goals_elements_team2:
-            try:
-                # time_goal = driver.find_element(By.CLASS_NAME, "match-stat__main-value").text.strip()
-                text = element.text.strip()
-                team_2_players_goals.add(text)
-                # team_2_players_goals[text] = time_goal
-            except:
-                continue
-        team_2_players_goals = list(team_2_players_goals)  
-        # Разделяем игроков на две команды
-        team_1_players = []
-        team_2_players = []
-
+        team_1_players,team_2_players = [],[] 
         if player_names:
-            half_index = len(player_names) // 2
-            team_1_players = player_names[:half_index] 
-            team_2_players = player_names[half_index:] 
+                half_index = len(player_names) // 2
+                team_1_players = player_names[:half_index] 
+                team_2_players = player_names[half_index:]
+
+                for element in goals_elements_team1[:sum_score]:
+                    text = element.text.strip()
+                    if text in team_1_players:
+                        team_1_players_goals.add(text)
+                    else:
+                        team_2_players_goals.add(text)
+                for element in goals_elements_team1[sum_score:]:
+                    text = element.text.strip()
+                    kick_offs.append(text)
+
+        team_1_players_goals = list(team_1_players_goals)
+        team_2_players_goals = list(team_2_players_goals)  
+
+       
 
         lineup_data = {
-            "team_1": {"lineup": team_1_players, "player_count": len(team_1_players)},
-            "team_2": {"lineup": team_2_players, "player_count": len(team_2_players)},
-            "goals_team_1":{team_1_players_goals},
-            "goals_team_2": {team_2_players_goals},
-            "total_players": len(player_names)
+            "lineup_team_1": team_1_players, 
+            "lineup_team_2": team_2_players, 
+            "goals_team_1":team_1_players_goals,
+            "goals_team_2": team_2_players_goals,
+            "kick_offs": kick_offs,
         }
 
         # Закрываем вкладку и возвращаемся
@@ -140,7 +127,7 @@ def parse_match_lineups(driver, match_url):
         WebDriverWait(driver, 3).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        time.sleep(.5)
+        time.sleep(1)
         print("SUCEED DUMP")
         return lineup_data
     
@@ -153,12 +140,12 @@ def parse_match_lineups(driver, match_url):
                 driver.switch_to.window(driver.window_handles[0])
         except:
             pass
+        return None
         # return {
         #     "team_1": {"lineup": [], "player_count": 0},
         #     "team_2": {"lineup": [], "player_count": 0},
         #     "total_players": 0
         # }
-        return 0
 
 def get_js_data_with_selenium(url):
     """Основная функция парсинга"""
@@ -179,7 +166,7 @@ def get_js_data_with_selenium(url):
         WebDriverWait(driver, 3).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        time.sleep(.5)
+        time.sleep(1)
 
         match_selectors = [".results-item", ".tournament-item", ".js-match-item"]
         processed_urls = set()
@@ -211,22 +198,24 @@ def get_js_data_with_selenium(url):
                             continue
 
                         processed_urls.add(match_url)
-                        text_to_make_headers = text[:100].split
+                        text_to_make_headers = text.split(" ")
+                        scores = [x for x in text_to_make_headers if x.isnumeric() ]
                         match_info = {
-                            # "text": text[:100] + "..." if len(text) > 100 else text,
+                            "text": text[:100] + "..." if len(text) > 100 else text,
                             "team1":text_to_make_headers[1],
                             "team2":text_to_make_headers[3],
-                            "score": text_to_make_headers[4] + ":"+ text_to_make_headers[6],
-                            # "url": match_url,
+                            "score": scores[0] + ":"+ scores[1],
+                            "url": match_url,
                             # "selector": selector,
-                            # "source_url": url  # Добавляем URL источника
+                            "source_url": url  # Добавляем URL источника
                         }
 
                         print(f"Найден матч: {match_info['text']}")
                         
                         # Парсим составы
-                        lineup_data = parse_match_lineups(driver, match_url)
-                        match_info["lineups"] = lineup_data
+                        lineup_data = parse_match_lineups(driver, match_url,sum(map(int,match_info['score'].split(":"))))
+                        match_info["stats"] = lineup_data
+                        
                         match_info["processed_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
                         if lineup_data:
                             matches_data.append(match_info)

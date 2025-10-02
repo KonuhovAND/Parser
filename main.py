@@ -5,7 +5,7 @@ if __name__ == "__main__":
     urls = [
         "https://www.championat.com/stat/hockey/#2025-09-07",
         # "https://www.championat.com/stat/hockey/#2025-09-08"
-        
+
     ]
     
     print("Запуск улучшенного парсера...")
