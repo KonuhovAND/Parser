@@ -1,6 +1,8 @@
 import sqlite3
 import json
 import os
+import re
+from datetime import datetime
 
 def create_hockey_database(json_file_path, db_file_path='hockey_matches.db'):
     """
@@ -32,6 +34,7 @@ def create_hockey_database(json_file_path, db_file_path='hockey_matches.db'):
             CREATE TABLE matches (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 match_text TEXT,
+                match_time TEXT,
                 team1 TEXT NOT NULL,
                 team2 TEXT NOT NULL,
                 score TEXT,
@@ -39,8 +42,7 @@ def create_hockey_database(json_file_path, db_file_path='hockey_matches.db'):
                 city TEXT,
                 viewers INTEGER,
                 attendance_percent INTEGER,
-                max_capacity INTEGER,
-                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                max_capacity INTEGER
             )
         ''')
         
@@ -76,6 +78,19 @@ def create_hockey_database(json_file_path, db_file_path='hockey_matches.db'):
             )
         ''')
         
+        def extract_time_from_match_text(match_text):
+            """Извлекает время из текста матча"""
+            if not match_text:
+                return None
+            
+            # Ищем паттерн времени в начале строки (например, "13:30", "02:00")
+            time_pattern = r'^(\d{1,2}:\d{2})'
+            match = re.match(time_pattern, match_text.strip())
+            
+            if match:
+                return match.group(1)
+            return None
+        
         # Вставляем данные матчей с безопасным доступом
         matches_processed = 0
         for match in data['matches']:
@@ -83,14 +98,18 @@ def create_hockey_database(json_file_path, db_file_path='hockey_matches.db'):
                 # Безопасно получаем данные stats
                 stats = match.get('stats', {})
                 
+                # Извлекаем время из match_text
+                match_time = extract_time_from_match_text(match.get('text', ''))
+                
                 # Вставляем основной матч
                 cursor.execute('''
                     INSERT INTO matches (
-                        match_text, team1, team2, score,
+                        match_text, match_time, team1, team2, score,
                         stadion, city, viewers, attendance_percent, max_capacity
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     match.get('text', ''),
+                    match_time,
                     match.get('team1', ''),
                     match.get('team2', ''),
                     match.get('score', ''),
@@ -151,6 +170,7 @@ def create_hockey_database(json_file_path, db_file_path='hockey_matches.db'):
         # Создаем индексы для ускорения запросов
         cursor.execute('CREATE INDEX idx_matches_team1 ON matches(team1)')
         cursor.execute('CREATE INDEX idx_matches_team2 ON matches(team2)')
+        cursor.execute('CREATE INDEX idx_matches_time ON matches(match_time)')
         cursor.execute('CREATE INDEX idx_lineups_match_id ON team_lineups(match_id)')
         cursor.execute('CREATE INDEX idx_goals_match_id ON goals(match_id)')
         cursor.execute('CREATE INDEX idx_kick_offs_match_id ON kick_offs(match_id)')
@@ -176,7 +196,7 @@ def check_database_structure(db_file_path):
         conn = sqlite3.connect(db_file_path)
         cursor = conn.cursor()
         
-        # Получаем список таблиц - ИСПРАВЛЕНО: одинарные кавычки
+        # Получаем список таблиц
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' OR type='view'")
         tables = cursor.fetchall()
         
@@ -212,9 +232,9 @@ def get_all_matches(db_file_path='hockey_matches.db'):
         cursor = conn.cursor()
         
         cursor.execute('''
-            SELECT id, match_text, team1, team2, score, stadion, city, viewers
+            SELECT id, match_text, match_time, team1, team2, score, stadion, city, viewers
             FROM matches
-            ORDER BY id
+            ORDER BY match_time, id
         ''')
         
         matches = cursor.fetchall()
@@ -222,7 +242,7 @@ def get_all_matches(db_file_path='hockey_matches.db'):
         
         print(f"\nВсе матчи ({len(matches)}):")
         for match in matches:
-            print(f"ID: {match[0]}, {match[2]} - {match[3]} {match[4]}, Стадион: {match[5]}, Зрители: {match[7]}")
+            print(f"ID: {match[0]}, Время: {match[2]}, {match[3]} - {match[4]} {match[5]}, Стадион: {match[6]}, Зрители: {match[8]}")
         
         return matches
         
@@ -246,10 +266,11 @@ def get_match_details(match_id, db_file_path='hockey_matches.db'):
         
         print(f"\nДетали матча ID {match_id}:")
         print(f"Матч: {match[1]}")
-        print(f"Команды: {match[2]} - {match[3]}")
-        print(f"Счет: {match[4]}")
-        print(f"Стадион: {match[5]}, Город: {match[6]}")
-        print(f"Зрители: {match[7]}, Заполняемость: {match[8]}%, Вместимость: {match[9]}")
+        print(f"Время: {match[2]}")
+        print(f"Команды: {match[3]} - {match[4]}")
+        print(f"Счет: {match[5]}")
+        print(f"Стадион: {match[6]}, Город: {match[7]}")
+        print(f"Зрители: {match[8]}, Заполняемость: {match[9]}%, Вместимость: {match[10]}")
         
         # Составы команд
         cursor.execute('''
@@ -275,14 +296,14 @@ def get_match_details(match_id, db_file_path='hockey_matches.db'):
         
         goals = cursor.fetchall()
         print("\nЗабитые голы:")
-        team1_goals = [g for g in goals if g[0] == match[2]]
-        team2_goals = [g for g in goals if g[0] == match[3]]
+        team1_goals = [g for g in goals if g[0] == match[3]]
+        team2_goals = [g for g in goals if g[0] == match[4]]
         
-        print(f"{match[2]}: {len(team1_goals)} голов")
+        print(f"{match[3]}: {len(team1_goals)} голов")
         for team, player in team1_goals:
             print(f"  - {player}")
             
-        print(f"{match[3]}: {len(team2_goals)} голов")
+        print(f"{match[4]}: {len(team2_goals)} голов")
         for team, player in team2_goals:
             print(f"  - {player}")
         
@@ -350,3 +371,38 @@ def get_most_penalized_players(db_file_path='hockey_matches.db'):
         
     except Exception as e:
         print(f"Ошибка при получении статистики удалений: {e}")
+
+def get_matches_by_time(time_range, db_file_path='hockey_matches.db'):
+    """Получает матчи по временному диапазону"""
+    try:
+        conn = sqlite3.connect(db_file_path)
+        cursor = conn.cursor()
+        
+        if '-' in time_range:
+            start_time, end_time = time_range.split('-')
+            cursor.execute('''
+                SELECT id, match_time, team1, team2, score, stadion, city
+                FROM matches 
+                WHERE match_time BETWEEN ? AND ?
+                ORDER BY match_time
+            ''', (start_time.strip(), end_time.strip()))
+        else:
+            cursor.execute('''
+                SELECT id, match_time, team1, team2, score, stadion, city
+                FROM matches 
+                WHERE match_time = ?
+                ORDER BY match_time
+            ''', (time_range,))
+        
+        matches = cursor.fetchall()
+        conn.close()
+        
+        print(f"\nМатчи в диапазоне {time_range} ({len(matches)}):")
+        for match in matches:
+            print(f"ID: {match[0]}, Время: {match[1]}, {match[2]} - {match[3]} {match[4]}, Стадион: {match[5]}")
+        
+        return matches
+        
+    except Exception as e:
+        print(f"Ошибка при получении матчей по времени: {e}")
+        return []
