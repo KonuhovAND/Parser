@@ -137,18 +137,7 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
                     text = element.text.strip()
                     kick_offs.append(text)
 
-        extra_data = {
-    "stadion": stadion,
-    "city": city,
-    "viewers": viewers,
-    "attendance_percent": attendance_percent,
-    "max_capacity": max_capacity,
-    "lineup_team1": team_1_players, 
-    "lineup_team2": team_2_players, 
-    "goals_team1": team_1_players_goals,
-    "goals_team2": team_2_players_goals,
-    "kick_offs": kick_offs,
-}  
+        
 
         # Закрываем вкладку и возвращаемся
         driver.close()
@@ -159,12 +148,19 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
         )
         time.sleep(1)
         print("%DONE%")
-        if not (city and stadion and viewers and max_capacity):
-            return None
-        else:
-            return extra_data
-
-    
+        # Заменить условие на:
+        return {
+                "stadion": stadion or "Неизвестно",
+                "city": city or "Неизвестно", 
+                "viewers": viewers or 0,
+                "attendance_percent": attendance_percent or 0,
+                "max_capacity": max_capacity or 0,
+                "lineup_team1": team_1_players,
+                "lineup_team2": team_2_players,
+                "goals_team1": team_1_players_goals,
+                "goals_team2": team_2_players_goals,
+                "kick_offs": kick_offs,
+            }    
 
     except Exception as e:
         print(f"Ошибка при парсинге составов: {e}")
