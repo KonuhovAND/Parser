@@ -3,11 +3,16 @@ import json
 import time
 from tools.generate_db import * 
 from tools.cache import *
+from datetime import datetime,timedelta
 def runner():
-    urls = [
-        "https://www.championat.com/stat/hockey/#2025-09-07",
-        "https://www.championat.com/stat/hockey/#2025-10-05"
-    ]
+    urls = []
+    today = datetime.now().date()
+    last_3_days = []
+
+    for i in range(1, 4):
+        day = today - timedelta(days=i)
+        urls.append(f"https://www.championat.com/stat/hockey/#{day.strftime('%Y-%m-%d')}")
+    
     
     print("Запуск улучшенного парсера...")
     with open('./matches_data.json','w'): 

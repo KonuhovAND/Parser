@@ -122,7 +122,7 @@ After using /parse:
         await application.bot.set_my_commands(
             [
                 ("start", "Show main menu"),
-                ("parse", "Start parsing web site and get files"),
+                ("parse", "Start parsing web site and get files\nCollect data last 3 days!"),
                 ("info", "Show available commands"),
                 ("projects", "View my projects"),
                 ("showskils", "See my skills"),
