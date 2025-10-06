@@ -34,16 +34,21 @@ class tg_bot:
         """Run parser and send file when finished"""
         try:
             # Run the parser
-            runner()
-            
-            # Send completion message and files
-            await self.send_parser_results(chat_id)
-            
+            try:
+                runner()
+                await self.send_parser_results(chat_id)
+            except Exception as e:
+                print(f"Parser error details: {e}")
+                await self.application.bot.send_message(
+                    chat_id=chat_id,
+                    text=f"❌ Parser failed with error: {str(e)}\n\nCheck the console for details."
+                )
+                
         except Exception as e:
             await self.application.bot.send_message(
                 chat_id=chat_id,
-                text=f"❌ Parser failed with error: {str(e)}"
-            )
+                text=f"❌ Unexpected error: {str(e)}"
+            ) 
 
     async def send_parser_results(self, chat_id):
         """Send parser results as files"""
@@ -57,7 +62,7 @@ class tg_bot:
             # List of files to send
             files_to_send = [
                 ('matches_data.json', 'Parsed matches data (JSON)'),
-                ('hockey_stats.db', 'Database with statistics'),
+                ('hockey_matches.db', 'Database with statistics'),
             ]
             
             # Send each file that exists
