@@ -1,15 +1,9 @@
 import asyncio
 import os
-from telegram_bot.not_a_token import _token
-from telegram_bot.sm import dev_profile, scenario
+from tg_tools.not_a_token import _token
+from tg_tools.sm import dev_profile, scenario
 from telegram import Update
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    ContextTypes,
-    MessageHandler,
-    filters,
-)
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.error import TelegramError
 from run_parser import runner
 
@@ -92,13 +86,13 @@ class tg_bot:
         except TelegramError as e:
             await self.application.bot.send_message(
                 chat_id=chat_id,
-                text="❌ Failed to send result files. Please check logs."
+                text="❌ Failed to send result files."
             )
 
     async def info(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show available commands"""
         info_text = """
-🤖 **Available Commands:**
+🤖 Available Commands:
 
 /start - Show main menu
 /parse - Start parsing website and get results as files
@@ -109,7 +103,7 @@ class tg_bot:
 /help - Show help menu
 /exit - Exit
 
-**After using /parse:**
+After using /parse:
 - You'll receive matches_data.json with parsed data
 - You'll receive hockey_stats.db database file
 - Processing may take a few minutes
