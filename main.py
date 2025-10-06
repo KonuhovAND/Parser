@@ -24,4 +24,4 @@ if __name__ == "__main__":
                 print(f"С страницы {url} добавлено {added_count} матчей")
             else:
                 print(f"На странице {url} не найдено новых матчей")
-    print(time.time()-start)
+    print(round(time.time()-start,3))

@@ -11,112 +11,70 @@ from json_adapter import *
 from extract_teams_from_match_text import extract_teams_from_match_text
 
 
-def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
-    
-    """Парсит составы команд на странице матча и разделяет на две команды"""
+       
+
+def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team2):
+    """Оптимизированная версия парсинга составов"""
     try:
         main_window = driver.current_window_handle
         
-        # Открываем матч в новой вкладке
+        # Открываем в новой вкладке
         driver.execute_script("window.open('');")
         driver.switch_to.window(driver.window_handles[1])
+        
+        # Устанавливаем таймаут загрузки
+        driver.set_page_load_timeout(5)
         driver.get(match_url)
 
-        WebDriverWait(driver, 3).until(
+        # Ждем меньше
+        WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        time.sleep(1)
+        time.sleep(0.3)  # Уменьшили sleep
 
-        # Ищем все элементы с именами игроков
-        player_elements = driver.find_elements(By.CLASS_NAME, "table-item__name")
+        # Используем более быстрые селекторы
+        player_elements = driver.find_elements(By.CSS_SELECTOR, ".table-item__name")
+        
+        # БЫСТРЫЙ ПАРСИНГ ИГРОКОВ
         player_names = []
-        
-        # Ищем элементы с голами
-        goals_elements_team1 = driver.find_elements(By.CSS_SELECTOR, ".match-stat__player")
-        # Списки для хранения игроков и голов
-        team_1_players_goals = []
-        team_2_players_goals = []
-        kick_offs = []
-        
-        stadion = ''
-        viewers:int  = None
-
-        # try:
-        #     extra_information = driver.find_elements(By.CSS_SELECTOR, ".match-info__extra-row")
-        #     for element in extra_information:
-        #         text = element.strip()
-        #         if not stadion:
-        #             stadion = text
-        #         else:
-        #             viewers = int(text)
-        # except:
-        #      raise Exception("Ошибка в парсинге доп статистики")
-        
-        
-        
-        team_1_players,team_2_players = [],[]
-        print("Trying to parse players...")
-        for i, element in enumerate(player_elements):
+        for element in player_elements:
             try:
                 text = element.text.strip()
-                # Упрощенная проверка - берем все имена, которые не являются названиями команд
-                if text and text not in TEAMS and len(text) >= 3:
-                    # Более мягкая проверка - только базовые критерии
-                    if (not any(char.isdigit() for char in text) and 
-                        'команда' not in text.lower() and 
-                        'клуб' not in text.lower() and
-                        text not in player_names):
-                        player_names.append(text) 
+                if text and len(text) >= 3 and not any(char.isdigit() for char in text):
+                    player_names.append(text)
             except:
-                  continue
+                continue
         
-        
+        # БЫСТРОЕ РАЗДЕЛЕНИЕ НА КОМАНДЫ
         if player_names:
-            
-                half_index = len(player_names) // 2
-                team_1_players = player_names[:half_index] 
-                team_2_players = player_names[half_index:]
-                
-                for element in goals_elements_team1[:(score_team1 + score_team2)]:
-                    text = element.text.strip()
-                    if text in team_1_players  and len(team_1_players_goals) <= score_team1:
-                        team_1_players_goals.append(text)
-                    elif text in team_2_players and len(team_2_players_goals) <= score_team2:
-                        team_2_players_goals.append(text)
-                        
-                while len(team_1_players_goals) < score_team1:
-                    team_1_players_goals.append(team_1_players_goals[-1])
-                    
-                while len(team_2_players_goals) < score_team2:
-                    team_2_players_goals.append(team_2_players_goals[-1])
-                    
-                    
-                for element in goals_elements_team1[(score_team1 + score_team2):]:
-                    text = element.text.strip()
-                    kick_offs.append(text)
+            half_index = len(player_names) // 2
+            team_1_players = player_names[:half_index] 
+            team_2_players = player_names[half_index:]
+        else:
+            team_1_players, team_2_players = [], []
 
-        lineup_data ={
+        # БЫСТРЫЙ ПАРСИНГ ДОПОЛНИТЕЛЬНОЙ ИНФОРМАЦИИ
+        stadion, city, viewers, max_capacity = parse_extra_info_fast(driver)
+        
+        extra_data = {
+            "city": city,
+            "stadion": stadion,
+            "viewers": viewers,
+            "max_capacity": max_capacity,
             "lineup_team1": team_1_players, 
             "lineup_team2": team_2_players, 
-            "goals_team1":team_1_players_goals,
-            "goals_team2": team_2_players_goals,
-            "kick_offs": kick_offs,
+            "goals_team1": [],
+            "goals_team2": [],
+            "kick_offs": []
         }
 
-        # Закрываем вкладку и возвращаемся
+        # Быстро закрываем
         driver.close()
         driver.switch_to.window(main_window)
-        driver.refresh()
-        WebDriverWait(driver,3).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
-        time.sleep(1)
-        print("%DONE%")
-        return lineup_data
-    
+        return extra_data
 
     except Exception as e:
-        print(f"Ошибка при парсинге составов: {e}")
+        print(f"Быстрый парсинг: ошибка {e}")
         try:
             if len(driver.window_handles) > 1:
                 driver.close()
@@ -124,17 +82,44 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
         except:
             pass
         return None
-        # return {
-        #     "team_1": {"lineup": [], "player_count": 0},
-        #     "team_2": {"lineup": [], "player_count": 0},
-        #     "total_players": 0
-        # }
 
-
-
-
-
-
+def parse_extra_info_fast(driver):
+    """Быстрый парсинг дополнительной информации"""
+    stadion = city = ''
+    viewers = max_capacity = None
+    
+    try:
+        extra_elements = driver.find_elements(By.CSS_SELECTOR, ".match-info__extra-row")
+        for element in extra_elements:
+            text = element.text.strip()
+            if not text or any(word in text.lower() for word in ['судья', 'линейный']):
+                continue
+                
+            # Быстрый парсинг через regex
+            import re
+            # Стадион из ссылки
+            try:
+                link = element.find_element(By.TAG_NAME, 'a')
+                stadion = link.text.strip()
+            except:
+                pass
+                
+            # Город из скобок
+            city_match = re.search(r'\((.*?)(?:,|\))', text)
+            if city_match:
+                city = city_match.group(1).strip()
+                
+            # Числа
+            numbers = re.findall(r'\d[\d\s]*\d', text)
+            if numbers:
+                viewers = int(numbers[0].replace(' ', ''))
+                if len(numbers) > 1:
+                    max_capacity = int(numbers[-1].replace(' ', ''))
+                    
+    except Exception as e:
+        print(f"Быстрый парсинг доп инфо: {e}")
+        
+    return stadion, city, viewers, max_capacity
 
 
 
@@ -149,16 +134,35 @@ def get_js_data_with_selenium(url):
     options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-extensions")
+    
+    # ОТКЛЮЧАЕМ ВСЕ ЛИШНЕЕ ДЛЯ УСКОРЕНИЯ
+    options.add_argument("--disable-images")
+    options.add_argument("--disable-javascript")  # осторожно, может сломать сайт
+    options.add_experimental_option("prefs", {
+        "profile.managed_default_content_settings.images": 2,  # Отключаем изображения
+        "profile.managed_default_content_settings.stylesheets": 2,  # Отключаем CSS
+    })
+    
+    # Более агрессивные настройки для скорости
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
 
     driver = webdriver.Chrome(options=options)
+    
+    # Устанавливаем таймауты поменьше
+    driver.set_page_load_timeout(5)
+    driver.implicitly_wait(2)
+    
     matches_data = []
 
     try:
         driver.get(url)
-        WebDriverWait(driver, 7).until(
+        # Уменьшаем время ожидания
+        WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        time.sleep(1)
+        # Убираем sleep или уменьшаем
+        time.sleep(0.5)
 
         match_selectors = [".results-item", ".tournament-item", ".js-match-item"]
         processed_urls = set()
@@ -171,7 +175,7 @@ def get_js_data_with_selenium(url):
             try:
                 match_elements = driver.find_elements(By.CSS_SELECTOR, selector)
                 
-                for i, element in enumerate(match_elements[:3]):
+                for i, element in enumerate(match_elements[:]):
                     try:
                         element = driver.find_elements(By.CSS_SELECTOR, selector)[i]
                         text = element.text.replace("\n", " ").strip()
@@ -191,8 +195,7 @@ def get_js_data_with_selenium(url):
 
                         processed_urls.add(match_url)
                         teams = extract_teams_from_match_text(text)
-                        
-                        scores = [x for x in text.split() if x.isnumeric() ]
+                        scores = [x for x in text.split(" ") if x.isnumeric() ]
                         team1 = teams[0]
                         team2 = teams[1]
                         match_info = {
