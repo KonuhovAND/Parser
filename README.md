@@ -14,24 +14,31 @@
 ## 🏗️ Архитектура
 
 Проект состоит из нескольких взаимосвязанных модулей:
-
+```bash
 Parser/
-├── bot.py                 # Telegram бот
-├── run_parser.py          # Основной запускающий модуль
-├── read_data_from_page.py # Парсер веб-страниц
-├── generate_db.py         # Генератор базы данных
-├── json_adapter.py        # Работа с JSON
-├── cache.py              # Система кэширования
-├── extract_teams_from_match_text.py # Извлечение команд
-├── is_valid_name.py      # Валидация имен игроков
-├── sm.py                 # Конфигурация бота
-└── not_a_token.py        # Токен бота
-
+├── bot.py
+├── cache
+├── hockey_matches.db
+├── matches_data.json
+├── README.md
+├── requirements.txt
+├── tg_tools
+│   ├── not_a_token.py -- your token is HERE!
+│   └── sm.py
+└── tools
+    ├── cache.py
+    ├── extract_teams_from_match_text.py
+    ├── generate_db.py
+    ├── is_valid_name.py
+    ├── json_adapter.py
+    ├── read_data_from_page.py
+    └── run_parser.py
+```
 ## ⚙️ Установка
 
 ### Требования
 
-- Python 3.8+
+- Python 3.12+
 - Chrome/Chromium браузер
 
 ### Установка зависимостей
@@ -45,7 +52,7 @@ pip install -r requirements.txt
 ### Настройка
 
 1. Получите токен бота у [BotFather](https://t.me/BotFather)
-2. Замените токен в `not_a_token.py`:
+2. Замените токен в `tg_tools/not_a_token.py`:
 ```python
 _token = "YOUR_TELEGRAM_BOT_TOKEN_HERE"
 ```
