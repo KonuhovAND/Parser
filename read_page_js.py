@@ -38,38 +38,80 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
         team_2_players_goals = []
         kick_offs = []
         
-        stadion = ''
-        viewers:int  = None
 
-        # try:
-        #     extra_information = driver.find_elements(By.CSS_SELECTOR, ".match-info__extra-row")
-        #     for element in extra_information:
-        #         text = element.strip()
-        #         if not stadion:
-        #             stadion = text
-        #         else:
-        #             viewers = int(text)
-        # except:
-        #      raise Exception("Ошибка в парсинге доп статистики")
-        
-        
-        
-        team_1_players,team_2_players = [],[]
+        stadion = ''
+        city = ''
+        viewers = None
+        attendance_percent = None
+        max_capacity = None
+
+        try:
+            extra_info_elements = driver.find_elements(By.CSS_SELECTOR, ".match-info__extra-row")
+            
+            for extra_element in extra_info_elements:
+                full_text = extra_element.text.strip()
+                if not full_text:
+                    continue
+                    
+                print(f"Доп. информация: {full_text}")
+                
+                # Пропускаем блоки с судьями
+                if any(word in full_text.lower() for word in ['судья', 'линейный', 'рефери']):
+                    print("Пропускаем блок с судьями")
+                    continue
+                
+                # Это должен быть блок со стадионом
+                try:
+                    # Стадион - первая ссылка в блоке
+                    stadion_link = extra_element.find_element(By.TAG_NAME, 'a')
+                    stadion = stadion_link.text.strip()
+                    print(f"Найден стадион: {stadion}")
+                except:
+                    print("Не удалось найти стадион")
+                    continue
+                
+                # Парсим город из текста
+                import re
+                
+                # Ищем город в скобках: "Мегаспорт (Москва, Россия)"
+                city_match = re.search(r'\((.*?),\s*[А-Яа-я]+\)', full_text)
+                if city_match:
+                    city = city_match.group(1).strip()
+                    print(f"Найден город: {city}")
+                
+                # Ищем все числа в тексте
+                numbers = re.findall(r'\d[\d\s]*\d', full_text)
+                numbers_clean = [int(num.replace(' ', '')) for num in numbers]
+                print(f"Найдены числа: {numbers_clean}")
+                
+                # Распределяем числа
+                if len(numbers_clean) >= 1:
+                    viewers = numbers_clean[0]
+                if len(numbers_clean) >= 2:
+                    attendance_percent = numbers_clean[1]
+                if len(numbers_clean) >= 3:
+                    max_capacity = numbers_clean[2]
+                    
+        except Exception as e:
+            print(f"Ошибка в парсинге доп статистики: {e}")
+                
+            team_1_players,team_2_players = [],[]
         print("Trying to parse players...")
         for i, element in enumerate(player_elements):
             try:
                 text = element.text.strip()
-                # Упрощенная проверка - берем все имена, которые не являются названиями команд
-                if text and text not in TEAMS and len(text) >= 3:
-                    # Более мягкая проверка - только базовые критерии
-                    if (not any(char.isdigit() for char in text) and 
-                        'команда' not in text.lower() and 
-                        'клуб' not in text.lower() and
+                # Улучшенная проверка - используем функцию валидации имен
+                if text and is_valid_player(text) and len(text) >= 3 and len(text.split()) < 3:
+                    # Дополнительная проверка: имя не должно быть названием команды
+                    if (text not in TEAMS and 
+                        not any(team_word in text.lower() for team_word in [
+                            'торпедо', 'акм', 'ростов', 'динамо', 'химик', 'рязань',
+                            'металлург', 'дизель', 'горняк', 'югра', 'магнитка'
+                        ]) and
                         text not in player_names):
                         player_names.append(text) 
             except:
-                  continue
-        
+                  continue       
         
         if player_names:
             
@@ -95,13 +137,18 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
                     text = element.text.strip()
                     kick_offs.append(text)
 
-        lineup_data ={
-            "lineup_team1": team_1_players, 
-            "lineup_team2": team_2_players, 
-            "goals_team1":team_1_players_goals,
-            "goals_team2": team_2_players_goals,
-            "kick_offs": kick_offs,
-        }
+        extra_data = {
+    "stadion": stadion,
+    "city": city,
+    "viewers": viewers,
+    "attendance_percent": attendance_percent,
+    "max_capacity": max_capacity,
+    "lineup_team1": team_1_players, 
+    "lineup_team2": team_2_players, 
+    "goals_team1": team_1_players_goals,
+    "goals_team2": team_2_players_goals,
+    "kick_offs": kick_offs,
+}  
 
         # Закрываем вкладку и возвращаемся
         driver.close()
@@ -112,7 +159,11 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
         )
         time.sleep(1)
         print("%DONE%")
-        return lineup_data
+        if not (city and stadion and viewers and max_capacity):
+            return None
+        else:
+            return extra_data
+
     
 
     except Exception as e:
@@ -149,6 +200,17 @@ def get_js_data_with_selenium(url):
     options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-extensions")
+    
+    options.add_argument("--disable-images")
+    options.add_argument("--disable-javascript")  # осторожно, может сломать сайт
+    options.add_experimental_option("prefs", {
+        "profile.managed_default_content_settings.images": 2,  # Отключаем изображения
+        "profile.managed_default_content_settings.stylesheets": 2,  # Отключаем CSS
+    })
+    
+    # Более агрессивные настройки для скорости
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False) 
 
     driver = webdriver.Chrome(options=options)
     matches_data = []
@@ -171,7 +233,7 @@ def get_js_data_with_selenium(url):
             try:
                 match_elements = driver.find_elements(By.CSS_SELECTOR, selector)
                 
-                for i, element in enumerate(match_elements[:3]):
+                for i, element in enumerate(match_elements):
                     try:
                         element = driver.find_elements(By.CSS_SELECTOR, selector)[i]
                         text = element.text.replace("\n", " ").strip()
