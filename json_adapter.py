@@ -10,7 +10,7 @@ def load_existing_data(filename="matches_data.json"):
                 return json.load(f)
         except:
             pass
-    return {"matches": [], "source_urls": [], "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")}
+    return {"matches": [], "source_urls": []}
 
 def save_to_json(data, filename="matches_data.json"):
     """Сохраняет данные в JSON, добавляя к существующим"""
@@ -36,7 +36,7 @@ def save_to_json(data, filename="matches_data.json"):
         if source_url not in existing_data.get('source_urls', []):
             existing_data.setdefault('source_urls', []).append(source_url)
     
-    existing_data['last_update'] = time.strftime("%Y-%m-%d %H:%M:%S")
+    # existing_data['last_update'] = time.strftime("%Y-%m-%d %H:%M:%S")
     
     # Сохраняем обратно
     with open(filename, 'w', encoding='utf-8') as f:

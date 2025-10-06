@@ -8,8 +8,10 @@ import time
 from is_valid_name import TEAMS, is_valid_player
 from random import randint
 from json_adapter import *
+from extract_teams_from_match_text import extract_teams_from_match_text
 
-def parse_match_lineups(driver, match_url,score_team1,score_team2):
+
+def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
     
     """Парсит составы команд на странице матча и разделяет на две команды"""
     try:
@@ -36,17 +38,37 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2):
         team_2_players_goals = []
         kick_offs = []
         
+        stadion = ''
+        viewers:int  = None
+
+        # try:
+        #     extra_information = driver.find_elements(By.CSS_SELECTOR, ".match-info__extra-row")
+        #     for element in extra_information:
+        #         text = element.strip()
+        #         if not stadion:
+        #             stadion = text
+        #         else:
+        #             viewers = int(text)
+        # except:
+        #      raise Exception("Ошибка в парсинге доп статистики")
+        
+        
+        
         team_1_players,team_2_players = [],[]
         print("Trying to parse players...")
-        for i,element in enumerate(player_elements):
+        for i, element in enumerate(player_elements):
             try:
                 text = element.text.strip()
-                if text and text not in TEAMS and len(text.split()) == 2:
-                    if is_valid_player(text): 
-                        if text not in player_names:
-                            player_names.append(text) 
+                # Упрощенная проверка - берем все имена, которые не являются названиями команд
+                if text and text not in TEAMS and len(text) >= 3:
+                    # Более мягкая проверка - только базовые критерии
+                    if (not any(char.isdigit() for char in text) and 
+                        'команда' not in text.lower() and 
+                        'клуб' not in text.lower() and
+                        text not in player_names):
+                        player_names.append(text) 
             except:
-                continue        
+                  continue
         
         
         if player_names:
@@ -63,21 +85,21 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2):
                         team_2_players_goals.append(text)
                         
                 while len(team_1_players_goals) < score_team1:
-                    team_1_players_goals.append(team_1_players_goals[randint(0,len(team_1_players_goals) - 1)])
+                    team_1_players_goals.append(team_1_players_goals[-1])
                     
                 while len(team_2_players_goals) < score_team2:
-                    team_2_players_goals.append(team_2_players_goals[randint(0,randint(0,len(team_2_players_goals)-1))])
+                    team_2_players_goals.append(team_2_players_goals[-1])
                     
                     
                 for element in goals_elements_team1[(score_team1 + score_team2):]:
                     text = element.text.strip()
                     kick_offs.append(text)
 
-        lineup_data = {
-            "lineup_team_1": team_1_players, 
-            "lineup_team_2": team_2_players, 
-            "goals_team_1":team_1_players_goals,
-            "goals_team_2": team_2_players_goals,
+        lineup_data ={
+            "lineup_team1": team_1_players, 
+            "lineup_team2": team_2_players, 
+            "goals_team1":team_1_players_goals,
+            "goals_team2": team_2_players_goals,
             "kick_offs": kick_offs,
         }
 
@@ -89,7 +111,7 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2):
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         time.sleep(1)
-        print("SUCEED DUMP")
+        print("%DONE%")
         return lineup_data
     
 
@@ -168,13 +190,15 @@ def get_js_data_with_selenium(url):
                             continue
 
                         processed_urls.add(match_url)
-                        text_to_make_headers = text.split(" ")
-                        scores = [x for x in text_to_make_headers if x.isnumeric() ]
+                        teams = extract_teams_from_match_text(text)
+                        
+                        scores = [x for x in text.split() if x.isnumeric() ]
+                        team1 = teams[0]
+                        team2 = teams[1]
                         match_info = {
                             "text": text[:100] + "..." if len(text) > 100 else text,
-                            # TODO: тут неправильно по командам раскинуто, то есть хк какой-то он не правильно сделает
-                            "team1":text_to_make_headers[1],
-                            "team2":text_to_make_headers[3],
+                            "team1":team1,
+                            "team2":team2,
                             "score": scores[0] + ":"+ scores[1],
                             "url": match_url,
                             # "selector": selector,
@@ -185,10 +209,10 @@ def get_js_data_with_selenium(url):
                         
                         # Парсим составы
                         team_scores = [int(x) for x in match_info['score'].split(":")]
-                        lineup_data = parse_match_lineups(driver, match_url,team_scores[0],team_scores[1])
+                        lineup_data = parse_match_lineups(driver, match_url,team_scores[0],team_scores[1],team1,team2)
                         match_info["stats"] = lineup_data
                         
-                        match_info["processed_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                        # match_info["processed_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
                         if lineup_data:
                             matches_data.append(match_info)
                         

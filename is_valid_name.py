@@ -1,8 +1,9 @@
 import re
 from nameparser import HumanName
+
 TEAMS = [
     "Авангард", "Омск",
-    "Автомобилист", "Екатеринбург",
+    "Автомобилист", "Екатеринбург", 
     "Адмирал", "Владивосток",
     "Ак Барс", "Казань",
     "Амур", "Хабаровск",
@@ -34,7 +35,7 @@ def is_valid_player_name(name):
         name = name.strip()
         
         # Базовые проверки
-        if not name or len(name) < 4 or len(name) > 50:
+        if not name or len(name) < 3 or len(name) > 50:
             return False
         
         # Проверка на цифры и специальные символы
@@ -65,14 +66,14 @@ def is_valid_player_name(name):
         if not parsed_name.first and not parsed_name.middle:
             return False
         
-        # Проверяем длину компонентов
+        # Проверяем длину компонентов (более мягкие требования)
         if parsed_name.last and len(parsed_name.last) < 2:
             return False
             
-        if parsed_name.first and len(parsed_name.first) < 2:
+        if parsed_name.first and len(parsed_name.first) < 1:  # Имя может быть одной буквой
             return False
             
-        if parsed_name.middle and len(parsed_name.middle) < 2:
+        if parsed_name.middle and len(parsed_name.middle) < 1:  # Отчество может быть одной буквой
             return False
         
         # Если дошли сюда, имя вероятно валидно
@@ -90,8 +91,8 @@ def is_valid_player_name_simple(name):
     try:
         name = name.strip()
         
-        # Базовые проверки
-        if not name or len(name) < 4 or len(name) > 50:
+        # Базовые проверки (более мягкие)
+        if not name or len(name) < 3 or len(name) > 50:
             return False
         
         # Не должно содержать цифр
@@ -102,31 +103,30 @@ def is_valid_player_name_simple(name):
         if re.search(r'[!@#$%^&*()_+=\[\]{};:"\\|,<>/?]', name):
             return False
         
-        # Должно содержать пробел (имя и фамилия)
+        # Должно содержать пробел (имя и фамилия) - но это не всегда обязательно
         if ' ' not in name:
+            # Разрешаем имена без пробелов (например, иностранные имена)
+            words = [name]
+        else:
+            words = name.split()
+        
+        if len(words) < 1 or len(words) > 4:
             return False
         
-        # Разбиваем на слова
-        words = name.split()
-        if len(words) < 2 or len(words) > 4:
-            return False
-        
-        # Проверяем каждое слово
+        # Проверяем каждое слово (более мягкие требования)
         for word in words:
-            if len(word) < 2:  # Слишком короткое слово
+            if len(word) < 1:  # Разрешаем очень короткие слова
                 return False
-            if len(word) > 15:  # Слишком длинное слово
+            if len(word) > 20:  # Увеличил максимальную длину слова
                 return False
-        if len([c for c in name if c.isupper()]) > 2:  # Слишком длинное слово в верхнем регистре
-            return False
         
         # Черный список общих не-имен
         blacklist = [
             'комета', 'цюрих', 'бельфаст', 'айсберен', 'оденсе', 'фиштаун',
-            'академия', 'красная', 'армия', 'стальные', 'лисы', 'ьвы',
+            'академия', 'красная', 'армия', 'стальные', 'лисы', 'львы',
             'пингвины', 'медведи', 'собаки', 'тигры', 'волки', 'орлы',
             'окончен', 'завершен', 'матч', 'игра', 'тайм', 'период',
-            'нк','спб','крылья'
+            'нк','спб','крылья', 'россия', 'канада', 'сша', 'германия', 'вр', 'зщ', 'нп'
         ]
         
         lower_name = name.lower()
@@ -146,5 +146,5 @@ def is_valid_player(name):
     """
     Универсальная проверка имени игрока
     """
-    # Сначала пробуем простую проверку
-    return is_valid_player_name_simple(name) and  is_valid_player_name(name)
+    # Сначала пробуем простую проверку, потом сложную
+    return is_valid_player_name_simple(name) or is_valid_player_name(name)
