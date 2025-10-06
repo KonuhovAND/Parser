@@ -18,7 +18,6 @@ def runner():
     with open('./matches_data.json','w'): 
         all_new_matches = []
         start = time.time()
-        
         for url in urls:
             print(f"Парсим страницу: {url}")
             
