@@ -176,8 +176,8 @@ def check_database_structure(db_file_path):
         conn = sqlite3.connect(db_file_path)
         cursor = conn.cursor()
         
-        # Получаем список таблиц
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        # Получаем список таблиц - ИСПРАВЛЕНО: одинарные кавычки
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' OR type='view'")
         tables = cursor.fetchall()
         
         print("\nСтруктура базы данных:")
@@ -350,61 +350,3 @@ def get_most_penalized_players(db_file_path='hockey_matches.db'):
         
     except Exception as e:
         print(f"Ошибка при получении статистики удалений: {e}")
-
-def get_team_stats(db_file_path='hockey_matches.db'):
-    """Получает статистику команд"""
-    try:
-        conn = sqlite3.connect(db_file_path)
-        cursor = conn.cursor()
-        
-        # Статистика по победам/поражениям
-        cursor.execute('''
-            SELECT team, 
-                   COUNT(*) as matches,
-                   SUM(CASE WHEN result = 'win' THEN 1 ELSE 0 END) as wins,
-                   SUM(CASE WHEN result = 'loss' THEN 1 ELSE 0 END) as losses
-            FROM (
-                SELECT team1 as team, 
-                       CASE WHEN CAST(SUBSTR(score, 1, INSTR(score, ':')-1) AS INTEGER) > CAST(SUBSTR(score, INSTR(score, ':')+1) AS INTEGER) THEN 'win'
-                            WHEN CAST(SUBSTR(score, 1, INSTR(score, ':')-1) AS INTEGER) < CAST(SUBSTR(score, INSTR(score, ':')+1) AS INTEGER) THEN 'loss'
-                            ELSE 'draw' END as result
-                FROM matches
-                UNION ALL
-                SELECT team2 as team, 
-                       CASE WHEN CAST(SUBSTR(score, 1, INSTR(score, ':')-1) AS INTEGER) < CAST(SUBSTR(score, INSTR(score, ':')+1) AS INTEGER) THEN 'win'
-                            WHEN CAST(SUBSTR(score, 1, INSTR(score, ':')-1) AS INTEGER) > CAST(SUBSTR(score, INSTR(score, ':')+1) AS INTEGER) THEN 'loss'
-                            ELSE 'draw' END as result
-                FROM matches
-            ) AS team_results
-            GROUP BY team
-            ORDER BY wins DESC
-            LIMIT 10
-        ''')
-        
-        team_stats = cursor.fetchall()
-        
-        print("\nТоп-10 команд по победам:")
-        for i, (team, matches, wins, losses) in enumerate(team_stats, 1):
-            draws = matches - wins - losses
-            print(f"  {i:2d}. {team}: {wins} побед, {losses} поражений, {draws} ничьих")
-        
-        conn.close()
-        
-    except Exception as e:
-        print(f"Ошибка при получении статистики команд: {e}")
-
-# Пример использования
-if __name__ == "__main__":
-    # Создаем базу данных
-    create_hockey_database('matches_data.json')
-    
-    # Получаем все матчи
-    get_all_matches()
-    
-    # Получаем статистику игроков
-    get_player_stats()
-    get_most_penalized_players()
-    
-    # Получаем детали первого матча
-    if get_all_matches():
-        get_match_details(1)

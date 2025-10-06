@@ -4,7 +4,7 @@ import time
 import hashlib
 import os
 import pickle
-from generate_db import create_hockey_database
+from generate_db import create_hockey_database,get_all_matches, get_match_details, get_most_penalized_players, get_player_stats
 CACHE_DIR = "cache"
 
 def get_cache_file(url):
@@ -64,9 +64,19 @@ if __name__ == "__main__":
 
         start = time.time()
         
-        # create_hockey_database('./matches_data.json') 
         # Вместо файла используем память
         create_hockey_database('matches_data.json')
         
+        # Получаем все матчи
+        get_all_matches()
+        
+        # Получаем статистику игроков
+        get_player_stats()
+        get_most_penalized_players()
+        
+        # Получаем детали первого матча
+        if get_all_matches():
+            get_match_details(1)
+
         print(f"Время на создание db - {round(time.time() - start,3)} секунд")
         
