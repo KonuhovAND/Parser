@@ -5,7 +5,7 @@ from tg_tools.sm import dev_profile, scenario
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.error import TelegramError
-from run_parser import runner
+from tools.run_parser import runner
 
 
 class tg_bot:
