@@ -12,7 +12,7 @@ from tools.extract_teams_from_match_text import extract_teams_from_match_text
 
 
 def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
-    
+    start_to_parsing_website = time.time() 
     """Парсит составы команд на странице матча и разделяет на две команды"""
     try:
         main_window = driver.current_window_handle
@@ -41,9 +41,9 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
 
         stadion = ''
         city = ''
-        viewers = None
-        attendance_percent = None
-        max_capacity = None
+        viewers:int = 0
+        attendance_percent:int = 0
+        max_capacity:int =0 
 
         try:
             extra_info_elements = driver.find_elements(By.CSS_SELECTOR, ".match-info__extra-row")
@@ -154,7 +154,7 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
                 "city": city or "Неизвестно", 
                 "viewers": viewers or 0,
                 "attendance_percent":  int((viewers / max_capacity)* 100),
-                "max_capacity": max_capacity or 0 or viewers + attendance_percent,
+                "max_capacity": max_capacity or viewers + attendance_percent or 0,
                 "lineup_team1": team_1_players,
                 "lineup_team2": team_2_players,
                 "goals_team1": team_1_players_goals,
@@ -218,7 +218,8 @@ def get_js_data_with_selenium(url):
         )
         time.sleep(1)
 
-        match_selectors = [".results-item", ".tournament-item", ".js-match-item"]
+        match_selectors = [".results-item", ]
+        # ".tournament-item", ".js-match-item"
         processed_urls = set()
 
         # Загружаем существующие URL чтобы не парсить повторно

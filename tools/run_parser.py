@@ -9,7 +9,7 @@ def runner():
     today = datetime.now().date()
     last_3_days = []
 
-    for i in range(1, 4):
+    for i in range(1, 3):
         day = today - timedelta(days=i)
         urls.append(f"https://www.championat.com/stat/hockey/#{day.strftime('%Y-%m-%d')}")
     
