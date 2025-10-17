@@ -2,7 +2,8 @@
 *.env
 *.key
 *.token.py
-tg_tools/
+token.py          # Add this line
+tg_tools/         # This should work for the whole folder
 .env.local
 
 # Python
