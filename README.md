@@ -1,150 +1,177 @@
-# Hockey Matches Parser 🏒
+🏒 Hockey Matches Parser
 
-Проект для парсинга хоккейных матчей с сайта championat.com с последующим сохранением в JSON и SQLite базу данных, а также предоставлением доступа через Telegram бота.
+    A comprehensive web scraper for collecting hockey match data from championat.com with SQLite database integration and Telegram bot interface
 
-## 🎯 Обзор
+[![Python Version](https://img.shields.iohttps://img.shields.io/badge/license-MIT-green.ntents
 
-Парсер собирает информацию о хоккейных матчах из различных лиг (КХЛ, ВХЛ, МХЛ, НХЛ), включая:
-- Основную информацию о матче (команды, счет, время)
-- Статистику стадиона (посещаемость, вместимость)
-- Составы команд
-- Авторов голов
-- Информацию об удалениях
+    Overview
 
-## 🏗️ Архитектура
+    Features
 
-Проект состоит из нескольких взаимосвязанных модулей:
-```bash
-Parser/
-├── bot.py
-├── cache
-├── hockey_matches.db
-├── matches_data.json
-├── README.md
-├── requirements.txt
-├── tg_tools
-│   ├── not_a_token.py -- your token is HERE!
-│   └── sm.py
-└── tools
-    ├── cache.py
-    ├── extract_teams_from_match_text.py
-    ├── generate_db.py
-    ├── is_valid_name.py
-    ├── json_adapter.py
-    ├── read_data_from_page.py
-    └── run_parser.py
-```
-## ⚙️ Установка
+    Prerequisites
 
-### Требования
+    Installation
 
-- Python 3.12+
-- Chrome/Chromium браузер
+    Configuration
 
-### Установка зависимостей
+    Usage
 
-```bash
+    Project Structure
+
+    Data Structure
+
+    Telegram Bot Commands
+
+    Development
+
+    Performance
+
+    Troubleshooting
+
+    Contributing
+
+    License
+
+    Contact
+
+🎯 Overview
+
+Hockey Matches Parser is an automated data collection tool that extracts detailed hockey match information from championat.com. The project supports multiple leagues (KHL, VHL, MHL, NHL) and provides structured data access through JSON files, SQLite database, and a user-friendly Telegram bot interface.
+
+​
+✨ Features
+
+    Multi-League Support: KHL, VHL, MHL, and NHL match data
+
+    Comprehensive Data Collection:
+
+        Match results (teams, scores, time)
+
+        Stadium statistics (attendance, capacity)
+
+        Team lineups (up to 40 players per match)
+
+        Goal scorers
+
+        Penalty information
+
+    Multiple Output Formats: JSON and SQLite database
+
+    Telegram Bot Interface: Easy access to parsed data
+
+    Smart Caching: Avoids re-parsing already processed matches
+
+    Error Handling: Robust exception handling for reliable operation
+
+🔧 Prerequisites
+
+Before installation, ensure you have:
+
+    Python 3.12 or higher
+
+    Chrome/Chromium browser installed
+
+    Git (for cloning the repository)
+
+    Telegram account (for bot functionality)
+
+📦 Installation
+1. Clone the Repository
+
+bash
 git clone https://github.com/KonuhovAND/Parser.git
 cd Parser
+
+2. Create Virtual Environment (Recommended)
+
+bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+3. Install Dependencies
+
+bash
 pip install -r requirements.txt
-```
 
-### Настройка
+⚙️ Configuration
+Telegram Bot Setup
 
-1. Получите токен бота у [BotFather](https://t.me/BotFather)
-2. Замените токен в `tg_tools/not_a_token.py`:
-```python
+    Create a bot via @BotFather on Telegram
+
+    Copy your bot token
+
+    Update the token in tg_tools/not_a_token.py:
+
+python
 _token = "YOUR_TELEGRAM_BOT_TOKEN_HERE"
-```
 
-## 🚀 Использование
+Browser Configuration
 
-### Запуск Telegram бота
+The parser automatically uses Chrome in headless mode. Ensure Chrome/Chromium is installed and accessible in your system PATH.
 
-```bash
+​
+🚀 Usage
+Running the Telegram Bot
+
+bash
 python bot.py
-```
 
-### Запуск парсера напрямую
+The bot will start and provide an interactive interface for parsing and accessing match data.
 
-```bash
-python run_parser.py
-```
+​
+Direct Parser Execution
 
-### Команды бота
+bash
+python tools/run_parser.py
 
-- `/start` - Главное меню
-- `/parse` - Запуск парсинга
-- `/info` - Информация о командах
-- `/projects` - Проекты разработчика
-- `/showskils` - Навыки разработчика
-- `/contact` - Контактная информация
+This runs the parser without the Telegram interface and saves results to matches_data.json and hockey_matches.db.
 
-## 🔧 Главные функции
+​
+Python API Usage
 
-### `get_js_data_with_selenium(url)` - Основной парсер
+python
+from tools.run_parser import runner
+from tools.generate_db import get_all_matches, get_player_stats
 
-**Принцип действия:**
-1. **Инициализация браузера** в headless-режиме с оптимизацией скорости
-2. **Загрузка страницы** с хоккейной статистикой
-3. **Поиск элементов матчей** по CSS-селекторам (`.results-item`, `.tournament-item`)
-4. **Извлечение базовой информации**: команды, счет, ссылка на матч
-5. **Парсинг детальной статистики** для каждого матча
-6. **Валидация и фильтрация** данных
+# Run the parser
+runner()
 
-**Ключевые особенности:**
-- Кэширование результатов
-- Обработка StaleElementReferenceException
-- Пропуск уже обработанных URL
+# Access database
+matches = get_all_matches()
+top_scorers = get_player_stats()
 
-### `parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team2)` - Парсинг составов
+📁 Project Structure
 
-**Принцип действия:**
-1. **Открытие страницы матча** в новой вкладке
-2. **Извлечение информации о стадионе**:
-   - Название стадиона
-   - Город
-   - Посещаемость и процент заполняемости
-3. **Парсинг составов команд**:
-   - Поиск элементов с классами игроков
-   - Разделение на две команды
-4. **Определение авторов голов**:
-   - Сопоставление игроков с забитыми голами
-   - Распределение по командам
-5. **Сбор информации об удалениях**
+text
+Parser/
+├── bot.py                          # Telegram bot main file
+├── cache/                          # Cached parsing results
+├── hockey_matches.db               # SQLite database output
+├── matches_data.json               # JSON data output
+├── requirements.txt                # Python dependencies
+├── README.md                       # Project documentation
+├── tg_tools/                       # Telegram bot utilities
+│   ├── not_a_token.py             # Bot token configuration
+│   └── sm.py                      # Bot state management
+└── tools/                          # Core parsing modules
+    ├── cache.py                   # Caching functionality
+    ├── extract_teams_from_match_text.py  # Team name extraction
+    ├── generate_db.py             # Database generation
+    ├── is_valid_name.py           # Name validation
+    ├── json_adapter.py            # JSON handling
+    ├── read_data_from_page.py     # Main parsing logic
+    └── run_parser.py              # Parser execution
 
-### `create_hockey_database(json_file_path, db_file_path)` - Генератор БД
+📊 Data Structure
+JSON Output Format
 
-**Принцип действия:**
-1. **Создание SQLite базы данных** с нормализованной структурой
-2. **Создание таблиц**:
-   - `matches` - основная информация о матчах
-   - `team_lineups` - составы команд
-   - `goals` - информация о голах
-   - `kick_offs` - информация об удалениях
-3. **Индексация** для оптимизации запросов
-4. **Валидация данных** перед вставкой
-
-### `save_to_json(data, filename)` - Адаптер JSON
-
-**Принцип действия:**
-1. **Загрузка существующих данных** из файла
-2. **Проверка дубликатов** по URL матчей
-3. **Добавление новых записей** с уникальными URL
-4. **Обновление мета-информации** (количество матчей, источники)
-5. **Сохранение в форматированном виде** с поддержкой кириллицы
-
-## 📊 Структура данных
-
-### JSON выходной формат
-
-```json
+json
 {
   "matches": [
     {
       "text": "13:30 Сибирь – Амур 0 : 2 окончен",
       "team1": "Сибирь",
-      "team2": "Амур", 
+      "team2": "Амур",
       "score": "0:2",
       "url": "https://www.championat.com/...",
       "source_url": "https://www.championat.com/stat/hockey/#2025-09-07",
@@ -154,87 +181,187 @@ python run_parser.py
         "viewers": 11496,
         "attendance_percent": 95,
         "max_capacity": 12000,
-        "lineup_team1": ["Луи Доминге", "Антон Красоткин", ...],
-        "lineup_team2": ["Владислав Кара", "Никита Сошников", ...],
+        "lineup_team1": ["Луи Доминге", "Антон Красоткин"],
+        "lineup_team2": ["Владислав Кара", "Никита Сошников"],
         "goals_team1": [],
         "goals_team2": ["Сергей Дубакин", "Олег Ли"],
-        "kick_offs": ["Архип Неколенко", "Иван Мищенко", ...]
+        "kick_offs": ["Архип Неколенко", "Иван Мищенко"]
       }
     }
   ],
-  "source_urls": [...],
+  "source_urls": ["..."],
   "matches_found": 25
 }
-```
 
-### Структура базы данных
+Database Schema
 
-- **matches** - основная таблица матчей
-- **team_lineups** - составы команд (связь many-to-one с matches)
-- **goals** - информация о голах (связь many-to-one с matches)  
-- **kick_offs** - информация об удалениях (связь many-to-one с matches)
+matches - Core match information
 
-## 💡 Примеры
+    id, text, team1, team2, score, url, source_url, stadium, city, viewers, attendance_percent, max_capacity
 
-### Пример использования парсера
+team_lineups - Player lineups
 
-```python
-from run_parser import runner
+    id, match_id, team_number, player_name
 
-# Запуск парсинга указанных URL
-runner()
-```
+goals - Goal information
 
-### Пример работы с базой данных
+    id, match_id, team_number, player_name
 
-```python
-from generate_db import get_all_matches, get_player_stats
+kick_offs - Penalty information
 
-# Получить все матчи
-matches = get_all_matches()
+    id, match_id, player_name
 
-# Получить статистику игроков
-top_scorers = get_player_stats()
-```
+🤖 Telegram Bot Commands
+Command	Description
+/start	Display main menu and welcome message
+/parse	Initiate parsing process and receive data files
+/info	View detailed command information
+/projects	Explore developer's other projects
+/showskills	View developer's technical skills
+/contact	Get contact information
+🛠️ Development
+Adding New Data Sources
 
-### Пример ответа бота
+    Add URLs to the urls list in tools/run_parser.py
 
-После команды `/parse` бот отправляет:
-- `matches_data.json` - полные данные в JSON формате
-- `hockey_matches.db` - SQLite база данных
+​
 
-## 🛠️ Разработка
+Verify CSS selectors in tools/read_data_from_page.py match the new source
 
-### Добавление нового источника данных
+    ​
 
-1. Добавьте URL в список `urls` в `run_parser.py`
-2. Убедитесь, что селекторы в `read_data_from_page.py` подходят для новой страницы
+    Test parsing with the new source
 
-### Расширение функциональности
+Extending Functionality
 
-- **Новая статистика**: Добавьте поля в `parse_match_lineups()`
-- **Дополнительные таблицы**: Расширьте `create_hockey_database()`
-- **Новые команды бота**: Добавьте обработчики в `bot.py`
+New Statistics: Modify parse_match_lineups() in tools/read_data_from_page.py
 
-### Оптимизация производительности
+​
 
-- Кэширование уже спарсенных страниц
-- Headless-режим браузера
-- Отключение изображений и CSS
-- Параллельная обработка матчей
+Additional Tables: Update create_hockey_database() in tools/generate_db.py
 
-## 📈 Статистика
+​
 
-Проект обрабатывает:
-- ✅ Матчи КХЛ, ВХЛ, МХЛ, НХЛ
-- ✅ Составы команд (до 40 игроков на матч)
-- ✅ Статистику стадионов
-- ✅ Голы и удаления
-- ⏱️ Время обработки: 2-5 минут на 25 матчей
+Bot Commands: Add handlers in bot.py
 
+​
+Key Functions
+get_js_data_with_selenium(url)
 
-<div align="center">
+Main parser function that:
 
-**Разработано Андреем Конюховым** | [Telegram](https://t.me/Andrew_Konuhov) | [GitHub](https://github.com/KonuhovAND)
+    Initializes headless browser with optimized settings
 
-</div>
+    Locates match elements via CSS selectors
+
+    Extracts basic match information
+
+    Handles StaleElementReferenceException errors
+
+    Implements caching to avoid duplicate processing
+
+    ​
+
+parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team2)
+
+Detailed match statistics parser:
+
+    Opens match page in new tab
+
+    Extracts stadium information
+
+    Parses team lineups
+
+    Identifies goal scorers
+
+    Collects penalty data
+
+    ​
+
+create_hockey_database(json_file_path, db_file_path)
+
+Database generator:
+
+    Creates normalized SQLite schema
+
+    Validates data before insertion
+
+    Creates indexes for query optimization
+
+    Handles relationships between tables
+
+    ​
+
+📈 Performance
+
+    Processing Speed: 2-5 minutes for 25 matches
+
+​
+
+Optimization Features:
+
+    Result caching for processed matches
+
+    Headless browser mode
+
+    Disabled images and CSS loading
+
+    Parallel match processing capability
+
+        ​
+
+🔍 Troubleshooting
+Common Issues
+
+Browser not found
+
+    Ensure Chrome/Chromium is installed
+
+    Check system PATH configuration
+
+Telegram bot not responding
+
+    Verify token in tg_tools/not_a_token.py
+
+    ​
+
+    Check bot permissions with BotFather
+
+Parsing errors
+
+    Website structure may have changed
+
+    Update CSS selectors in read_data_from_page.py
+
+    ​
+
+    Clear cache directory and retry
+
+🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+    Fork the repository
+
+    Create a feature branch (git checkout -b feature/AmazingFeature)
+
+    Commit your changes (git commit -m 'Add some AmazingFeature')
+
+    Push to the branch (git push origin feature/AmazingFeature)
+
+    Open a Pull Request
+
+📄 License
+
+This project is open source and available under the MIT License.
+👤 Contact
+
+Andrey Konukhov
+
+    GitHub: @KonuhovAND
+
+    Telegram: Contact via bot
+
+    Project Link: https://github.com/KonuhovAND/Parser
+
+⭐ Star this repository if you find it helpful!
