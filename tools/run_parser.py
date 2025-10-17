@@ -4,12 +4,12 @@ import time
 from tools.generate_db import * 
 from tools.cache import *
 from datetime import datetime,timedelta
-def runner():
+def runner(days):
     urls = []
     today = datetime.now().date()
-    last_3_days = []
+    
 
-    for i in range(1, 3):
+    for i in range(1, days+1):
         day = today - timedelta(days=i)
         urls.append(f"https://www.championat.com/stat/hockey/#{day.strftime('%Y-%m-%d')}")
     

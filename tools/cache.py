@@ -1,7 +1,7 @@
 import hashlib
 import os
 import pickle
-CACHE_DIR = "cache"
+CACHE_DIR = "./cache"
 
 def get_cache_file(url):
     """Генерирует имя файла для кэша"""

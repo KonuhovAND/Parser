@@ -15,8 +15,8 @@ def create_hockey_database(json_file_path, db_file_path='hockey_matches.db'):
     
     # Удаляем существующую базу данных, если есть
     if os.path.exists(db_file_path):
-        os.remove(db_file_path)
-        print(f"Удалена существующая база данных: {db_file_path}")
+         os.remove(db_file_path)
+         print(f"Удалена существующая база данных: {db_file_path}")
     
     try:
         # Загружаем данные из JSON
