@@ -9,3 +9,4 @@ tg_tools/         # This should work for the whole folder
 # Python
 __pycache__/
 *.pyc
+tg_tools/token.py
