@@ -1,1 +1,10 @@
-*token*
+# Tokens and secrets
+*.env
+*.key
+*.token.py
+tg_tools/
+.env.local
+
+# Python
+__pycache__/
+*.pyc
