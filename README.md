@@ -5,7 +5,7 @@
 
 > A comprehensive web scraper for collecting hockey match data from championat.com with SQLite database integration and Telegram bot interface
 ```markdown
-[Python Version](https://img.shields.iohttps://img.shields.io/badge/license-MIT-green.ntents)
+(Python Version)[https://img.shields.iohttps://img.shields.io/badge/license-MIT-green.ntents]
 ```
 - [Overview](#overview)
 - [Features](#features)
