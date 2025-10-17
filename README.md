@@ -1,3 +1,4 @@
+```markdown
 🏒 Hockey Matches Parser
 
     A comprehensive web scraper for collecting hockey match data from championat.com with SQLite database integration and Telegram bot interface
@@ -365,3 +366,4 @@ Andrey Konukhov
     Project Link: https://github.com/KonuhovAND/Parser
 
 ⭐ Star this repository if you find it helpful!
+```
