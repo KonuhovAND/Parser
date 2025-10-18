@@ -1,16 +1,18 @@
 import asyncio
 import os
 import signal
+import warnings
+from telegram.warnings import PTBUserWarning
 from tg_tools.sm import dev_profile, scenario
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 from telegram.error import TelegramError
 from tools.run_parser import runner
-from time import time
 
+# Suppress the specific per_message warning
+warnings.filterwarnings('ignore', message='.*per_message.*', category=PTBUserWarning)
 
-
-DATA = 1
+DATA, MODE, LEAGUE = range(3)
 class tg_bot:
     def __init__(self, token_bot):
         self.token_bot = token_bot
@@ -43,10 +45,47 @@ class tg_bot:
     async def echo(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(update.message.text)
         
-    async def button_handler(update: Update, context):
+    async def button_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
-        await query.answer()  # Remove loading animation
-        await query.edit_message_text(f"You selected: {query.data}")
+        await query.answer()
+        
+        button_data = query.data  
+        
+        if button_data in ['json', 'db', 'both']:
+            context.user_data['mode'] = button_data
+            await query.edit_message_text(f"✓ Selected format: {button_data}")
+            
+            keyboard = [
+                [InlineKeyboardButton("NHL", callback_data='nhl')],
+                [InlineKeyboardButton("KHL", callback_data='_superleague')],
+                [InlineKeyboardButton("VHL", callback_data='_highleague')],
+                [InlineKeyboardButton("MHL", callback_data='mhl')],
+                [InlineKeyboardButton("All", callback_data='all')],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await context.bot.send_message(
+                chat_id=query.message.chat_id,
+                text='Choose league:',
+                reply_markup=reply_markup
+            )
+            return LEAGUE
+            
+        elif button_data in ['nhl', '_superleague', '_highleague', 'mhl', 'all']:
+            context.user_data['league'] = button_data
+            await query.edit_message_text(f"✓ Selected league: {button_data.upper()}")
+            
+            chat_id = query.message.chat_id
+            days = context.user_data.get('days')
+            mode = context.user_data.get('mode')
+            
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"🚀 Starting parser...\n\n📅 Days: {days}\n📦 Format: {mode}\n🏒 League: {button_data.upper()}"
+            )
+            
+            asyncio.create_task(self.run_parser_and_send_file(chat_id, mode, days, button_data))
+            
+            return ConversationHandler.END
     
     async def cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Operation cancelled")
@@ -63,15 +102,6 @@ class tg_bot:
     # Parsing commands
     async def parse(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Enter amount of days to parse:")
-        keyboard = [
-        [InlineKeyboardButton("json", callback_data='json')],
-        [InlineKeyboardButton(".db file", callback_data='db')],
-        [InlineKeyboardButton("both", callback_data='both')],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text('Choose an option:', reply_markup=reply_markup)
-        context.user_data['mode'] =  InlineKeyboardButton.callback_data()
-        
         return DATA
 
 
@@ -129,71 +159,56 @@ class tg_bot:
                 text="❌ Failed to send files."
             )
 
-    
-    
-    async def hockey_options(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        keyboard = [
-        [InlineKeyboardButton("NHL", callback_data='nhl')],
-        [InlineKeyboardButton("KHL", callback_data='khl')],
-        [InlineKeyboardButton("VHL", callback_data='vhl')],
-        [InlineKeyboardButton("MHL", callback_data='mhl')],
-        [InlineKeyboardButton("All", callback_data='all')],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text('Choose an option:', reply_markup=reply_markup)
+      
         
         
     async def receive_data(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        data = update.message.text
-        try:
-            days = data.split(" ")[0].strip()
-            league = data.split(" ")[1].strip()
-        except Exception as exc:
-            await update.message.reply_text("Please enter a valid number of days:")
-            return DATA
+        days = update.message.text.strip()
+        
+        
         # Validate input
         if not days.isdigit() or int(days) <= 0:
-            await update.message.reply_text("Please enter a valid number of days:")
+            await update.message.reply_text("❌ Please enter a valid positive number of days:")
             return DATA
-        self.hockey_options(update, context)
         
-        chat_id = update.message.chat_id
-        mode = context.user_data.get('mode')
+        # Store days
+        context.user_data['days'] = int(days)
         
-        await update.message.reply_text("Parsing is started! I'll send you the file when finished.")
-        # Run parser in background
-        asyncio.create_task(self.run_parser_and_send_file(chat_id, mode=mode, days=int(days), league=league))
+    
+        keyboard = [
+            [InlineKeyboardButton("JSON", callback_data='json')],
+            [InlineKeyboardButton("DB file", callback_data='db')],
+            [InlineKeyboardButton("Both", callback_data='both')],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text('Choose output format:', reply_markup=reply_markup)
         
-        return ConversationHandler.END
+        # Return the next state
+        return MODE
+
 
    
 
     def main(self):
         self.application = Application.builder().token(self.token_bot).build()
         
-        # Single ConversationHandler with 3 entry points
+        # Conversation handler with proper callback handling
         conv_handler = ConversationHandler(
-            entry_points=[
-                CommandHandler("parse", self.parse),
-            ],
+            entry_points=[CommandHandler("parse", self.parse)],
             states={
-                DATA: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.receive_data)]
+                DATA: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.receive_data)],
+                MODE: [CallbackQueryHandler(self.button_handler)],
+                LEAGUE: [CallbackQueryHandler(self.button_handler)],
             },
             fallbacks=[CommandHandler("cancel", self.cancel)],
-            per_chat=True
+            per_chat=True,
+            per_message=False,
         )
         
-        # Add handlers
         self.application.add_handler(CommandHandler("start", self.start))
-        self.application.add_handler(conv_handler)
-        self.application.add_handler(CallbackQueryHandler(self.button_handler))
         self.application.add_handler(CommandHandler("info", self.info))
-        self.application.add_handler(
-            CommandHandler(["help", "projects", "showskils", "contact", "exit"], self.options)
-        )
-        self.application.add_handler(
-            MessageHandler(filters.TEXT & ~filters.COMMAND, self.echo)
-        )
+        self.application.add_handler(conv_handler)
+        
         
         self.application.post_init = self.post_init
         self.application.run_polling(allowed_updates=Update.ALL_TYPES)
