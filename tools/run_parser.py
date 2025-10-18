@@ -4,11 +4,18 @@ import time
 from tools.generate_db import * 
 from tools.cache import *
 from datetime import datetime,timedelta
-def runner(days):
+def runner(days,league):
     urls = []
     today = datetime.now().date()
     
-
+    league_map = {
+        "nhl": "_nhl",
+        "khl": "_superleague",
+        "vhl": "_highleague",
+        "mhl": "_mhl",
+        "all": ""
+        }
+    league = league_map.get(league, "")
     for i in range(1, days+1):
         day = today - timedelta(days=i)
         urls.append(f"https://www.championat.com/stat/hockey/#{day.strftime('%Y-%m-%d')}")
@@ -26,7 +33,7 @@ def runner(days):
             if cached_data is not None:
                 matches = cached_data
             else:
-                matches = get_js_data_with_selenium(url)
+                matches = get_js_data_with_selenium(url, league)
                 if matches:
                     save_to_cache(url, matches)
             

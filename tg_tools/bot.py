@@ -7,9 +7,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from telegram.error import TelegramError
 from tools.run_parser import runner
 from time import time
-
-DAYS = 1
-
+from tg_tools.bot_functions.conversation_handlers_league import *
+DATA = []
 class tg_bot:
     def __init__(self, token_bot):
         self.token_bot = token_bot
@@ -31,46 +30,25 @@ class tg_bot:
     async def parse_to_json(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Enter amount of days to parse:")
         context.user_data['mode'] = 'json'
-        return DAYS
+        return DATA
 
     # Entry point for DB parsing
     async def parse_to_db(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Enter amount of days to parse:")
         context.user_data['mode'] = 'db'
-        return DAYS
+        return DATA
 
     # Entry point for both JSON and DB
     async def parse_to_json_and_db(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Enter amount of days to parse:")
         context.user_data['mode'] = 'both'
-        return DAYS
+        return DATA
 
-    # Shared handler: receives and validates days
-    async def receive_days(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        days = update.message.text
-        
-        # Validate input
-        if not days.isdigit():
-            await update.message.reply_text("Please enter a valid number of days:")
-            return DAYS
-        
-        chat_id = update.message.chat_id
-        mode = context.user_data.get('mode')
-        
-        await update.message.reply_text("Parsing is started! I'll send you the file when finished.")
-        
-        # Run parser in background
-        asyncio.create_task(self.run_parser_and_send_file(chat_id, mode=mode, days=int(days)))
-        
-        return ConversationHandler.END
+    
 
-    async def cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_text("Operation cancelled")
-        return ConversationHandler.END
-
-    async def run_parser_and_send_file(self, chat_id, mode, days):
+    async def run_parser_and_send_file(self, chat_id, mode, days,league):
         try:
-            runner(days=days)
+            runner(days=days,league=league)
             await self.send_parser_results(chat_id, mode)
         except Exception as e:
             print(f"Parser error details: {e}")
@@ -159,7 +137,7 @@ class tg_bot:
                 CommandHandler("parse_json_and_db", self.parse_to_json_and_db)
             ],
             states={
-                DAYS: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.receive_days)]
+                DATA: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.receive_days)]
             },
             fallbacks=[CommandHandler("cancel", self.cancel)],
             per_chat=True

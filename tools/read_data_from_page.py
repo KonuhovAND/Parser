@@ -186,10 +186,10 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
 
 
 
-def get_js_data_with_selenium(url):
+def get_js_data_with_selenium(url,league):
     """Основная функция парсинга"""
     options = Options()
-    options.add_argument("--headless")
+    options.add_argument("--headlless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
@@ -272,7 +272,7 @@ def get_js_data_with_selenium(url):
                         match_info["stats"] = lineup_data
                         
                         # match_info["processed_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
-                        if lineup_data:
+                        if lineup_data and league in match_url:
                             matches_data.append(match_info)
                         
 
