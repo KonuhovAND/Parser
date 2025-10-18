@@ -247,10 +247,10 @@ def get_js_data_with_selenium(url,league):
 
                         if not match_url or match_url in processed_urls or match_url in existing_urls:
                             continue
-                        if league == "all":
-                            continue
-                        elif league not in match_url:
-                            break
+                        # if league == "all":
+                        #     continue
+                        # elif league not in match_url:
+                        #     break
                         processed_urls.add(match_url)
                         teams = extract_teams_from_match_text(text)
                         
@@ -275,7 +275,9 @@ def get_js_data_with_selenium(url,league):
                         match_info["stats"] = lineup_data
                         
                         # match_info["processed_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
-                        if lineup_data:
+                        if league == "all":
+                            matches_data.append(match_info)
+                        elif lineup_data and league in match_url:
                             matches_data.append(match_info)
                         
 
