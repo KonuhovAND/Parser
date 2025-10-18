@@ -8,14 +8,6 @@ def runner(days,league):
     urls = []
     today = datetime.now().date()
     
-    league_map = {
-        "nhl": "_nhl",
-        "khl": "_superleague",
-        "vhl": "_highleague",
-        "mhl": "_mhl",
-        "all": ""
-        }
-    league = league_map.get(league, "")
     for i in range(1, days+1):
         day = today - timedelta(days=i)
         urls.append(f"https://www.championat.com/stat/hockey/#{day.strftime('%Y-%m-%d')}")

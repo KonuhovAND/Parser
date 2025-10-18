@@ -7,7 +7,7 @@ from tg_tools.sm import dev_profile, scenario
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 from telegram.error import TelegramError
-from tools.run_parser import runner
+from tools.generate_urls_to_parse import runner
 
 # Suppress the specific per_message warning
 warnings.filterwarnings('ignore', message='.*per_message.*', category=PTBUserWarning)
