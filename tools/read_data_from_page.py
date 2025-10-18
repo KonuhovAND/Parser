@@ -189,7 +189,7 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
 def get_js_data_with_selenium(url,league):
     """Основная функция парсинга"""
     options = Options()
-    options.add_argument("--headlless")
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
@@ -198,7 +198,7 @@ def get_js_data_with_selenium(url,league):
     options.add_argument("--disable-extensions")
     
     options.add_argument("--disable-images")
-    options.add_argument("--disable-javascript")  # осторожно, может сломать сайт
+    #options.add_argument("--disable-javascript")  # осторожно, может сломать сайт
     options.add_experimental_option("prefs", {
         "profile.managed_default_content_settings.images": 2,  # Отключаем изображения
         "profile.managed_default_content_settings.stylesheets": 2,  # Отключаем CSS
@@ -247,7 +247,10 @@ def get_js_data_with_selenium(url,league):
 
                         if not match_url or match_url in processed_urls or match_url in existing_urls:
                             continue
-
+                        if league == "all":
+                            continue
+                        elif league not in match_url:
+                            break
                         processed_urls.add(match_url)
                         teams = extract_teams_from_match_text(text)
                         
@@ -272,7 +275,7 @@ def get_js_data_with_selenium(url,league):
                         match_info["stats"] = lineup_data
                         
                         # match_info["processed_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
-                        if lineup_data and league in match_url:
+                        if lineup_data:
                             matches_data.append(match_info)
                         
 
@@ -280,11 +283,13 @@ def get_js_data_with_selenium(url,league):
                         continue
                     except Exception as e:
                         print(f"Ошибка обработки элемента {i}: {e}")
-                        continue
+                        #continue
+                        break
 
             except Exception as e:
                 print(f"Ошибка с селектором {selector}: {e}")
-                continue
+                # continue
+                break
 
         return matches_data
 

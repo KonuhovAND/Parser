@@ -7,8 +7,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from telegram.error import TelegramError
 from tools.run_parser import runner
 from time import time
-from tg_tools.bot_functions.conversation_handlers_league import *
-DATA = []
+
+DATA = 1
 class tg_bot:
     def __init__(self, token_bot):
         self.token_bot = token_bot
@@ -28,19 +28,19 @@ class tg_bot:
 
     # Entry point for JSON parsing
     async def parse_to_json(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_text("Enter amount of days to parse:")
+        await update.message.reply_text("Enter amount of days to parse and leauge (days league)\nNHL, KHL, VHL, MHL, all:")
         context.user_data['mode'] = 'json'
         return DATA
 
     # Entry point for DB parsing
     async def parse_to_db(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_text("Enter amount of days to parse:")
+        await update.message.reply_text("Enter amount of days to parse and leauge (days league)\nNHL, KHL, VHL, MHL, all:")
         context.user_data['mode'] = 'db'
         return DATA
 
     # Entry point for both JSON and DB
     async def parse_to_json_and_db(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_text("Enter amount of days to parse:")
+        await update.message.reply_text("Enter amount of days to parse and leauge (days league)\nNHL, KHL, VHL, MHL, all:")
         context.user_data['mode'] = 'both'
         return DATA
 
@@ -115,16 +115,43 @@ class tg_bot:
 
     async def echo(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(update.message.text)
+        
+        
+    async def receive_data(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        data = update.message.text
+        try:
+            days = data.split(" ")[0].strip()
+            league = data.split(" ")[1].strip()
+        except Exception as exc:
+            await update.message.reply_text("Please enter a valid number of days and league (days league)\nNHL, KHL, VHL, MHL, all:")
+            return DATA
+        # Validate input
+        if not days.isdigit() or int(days) <= 0 or league not in ["nhl","khl","vhl","mhl","all"]:
+            await update.message.reply_text("Please enter a valid number of days and league (days league)\nNHL, KHL, VHL, MHL, all:")
+            return DATA
+        
+        chat_id = update.message.chat_id
+        mode = context.user_data.get('mode')
+        
+        await update.message.reply_text("Parsing is started! I'll send you the file when finished.")
+        # Run parser in background
+        asyncio.create_task(self.run_parser_and_send_file(chat_id, mode=mode, days=int(days), league=league))
+        
+        return ConversationHandler.END
 
+    async def cancel(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await update.message.reply_text("Operation cancelled")
+        return ConversationHandler.END
+    
     async def post_init(self, application: Application):
-        await application.bot.set_my_commands([
-            ("start", "Show main menu"),
-            ("parse_json", "Parse to JSON"),
-            ("parse_db", "Parse to DB"),
-            ("parse_json_and_db", "Parse to both"),
-            ("info", "Show commands"),
-            ("cancel", "Cancel operation"),
-        ])
+            await application.bot.set_my_commands([
+                ("start", "Show main menu"),
+                ("parse_json", "Parse to JSON"),
+                ("parse_db", "Parse to DB"),
+                ("parse_json_and_db", "Parse to both"),
+                ("info", "Show commands"),
+                ("cancel", "Cancel operation"),
+            ])
 
     def main(self):
         self.application = Application.builder().token(self.token_bot).build()
@@ -137,7 +164,7 @@ class tg_bot:
                 CommandHandler("parse_json_and_db", self.parse_to_json_and_db)
             ],
             states={
-                DATA: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.receive_days)]
+                DATA: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.receive_data)]
             },
             fallbacks=[CommandHandler("cancel", self.cancel)],
             per_chat=True
