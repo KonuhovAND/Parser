@@ -153,7 +153,7 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
                 "stadion": stadion or "Неизвестно",
                 "city": city or "Неизвестно", 
                 "viewers": viewers or 0,
-                "attendance_percent":  int((viewers / max_capacity)* 100),
+                "attendance_percent": attendance_percent or 0,
                 "max_capacity": max_capacity or viewers + attendance_percent or 0,
                 "lineup_team1": team_1_players,
                 "lineup_team2": team_2_players,
