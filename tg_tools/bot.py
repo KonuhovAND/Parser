@@ -3,7 +3,7 @@ import os
 import signal
 import warnings
 from telegram.warnings import PTBUserWarning
-from tg_tools.sm import dev_profile, scenario
+from tg_tools.sm import dev_profile
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 from telegram.error import TelegramError
@@ -20,23 +20,20 @@ class tg_bot:
     # Tools commands
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(dev_profile)
-
+    async def exit(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await update.message.reply_text("Shutting down the bot...")
+        os.kill(os.getpid(), signal.SIGINT)
+        
     async def options(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        option = update.message.text.strip()[1:]
-        await update.message.reply_text(scenario[option]["statment"])
-        if "links" in scenario[option]:
-            for name, link in scenario[option]["links"].items():
-                await update.message.reply_text(link)
-        if option == "exit":
-            os.kill(os.getpid(), signal.SIGINT)
+        pass
+            
+            
     async def info(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         info_text = """
 🤖 Available Commands:
 
 /start - Show main menu
-/parse_json - Parse and get JSON file
-/parse_db - Parse and get DB file
-/parse_json_and_db - Parse and get both files
+/parse - Parse and get data
 /info - Show this help
 /cancel - Cancel current operation
         """
@@ -206,6 +203,7 @@ class tg_bot:
         )
         
         self.application.add_handler(CommandHandler("start", self.start))
+        self.application.add_handler(CommandHandler("exit", self.exit))
         self.application.add_handler(CommandHandler("info", self.info))
         self.application.add_handler(conv_handler)
         
