@@ -1,87 +1,104 @@
-#define _CRT_SECURE_NO_WARNINGS
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <locale.h>
 
-void printfMatrix(int rows,const float list[rows][rows]){
-    for (int i=0;i < rows;i++){
-        for (int j=0;j < rows;j++){
-            printf("%.2f ", list[i][j]);
+// Функция для вывода матрицы
+void printMatrix(int n, float matrix[20][20]) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            printf("%.0f ", matrix[i][j]);
         }
         printf("\n");
     }
-
 }
 
-int scanfMatrix(int rows, float list[rows][rows]){
-    for (int i = 0; i < rows; i++){
-        for (int j = 0; j < rows; j++){
-            int fool_proof =scanf("%f", &list[i][j]);
-            if (fool_proof != 1){
+// Функция для ввода матрицы с защитой от ошибок
+int inputMatrix(int n, float matrix[20][20]) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (scanf("%f", &matrix[i][j]) != 1) {
+                printf("Ошибка: некорректный ввод\n");
+                while (getchar() != '\n');
                 return 0;
             }
         }
-        printf("U entered row %d\n", i + 1);
     }
     return 1;
 }
+
+// Функция для нахождения максимума в треугольной области (вариант 3)
+// Треугольник расширяется ВПРАВО, захватывая элементы сверху и снизу
+float findMaxInTriangle(int n, float matrix[20][20], int i, int j) {
+    float max_val = matrix[i][j];
+    
+    // Идем по столбцам вправо от j
+    for (int col = j; col < n; col++) {
+        // Расстояние от начального столбца
+        int dist = col - j;
+        
+        // На столбце col проверяем строки от (i - dist) до (i + dist)
+        int row_start = i - dist;
+        int row_end = i + dist;
+        
+        // Проверяем границы матрицы
+        if (row_start < 0) {
+            row_start = 0;
+        }
+        if (row_end >= n) {
+            row_end = n - 1;
+        }
+        
+        // Ищем максимум в диапазоне строк на этом столбце
+        for (int row = row_start; row <= row_end; row++) {
+            if (matrix[row][col] > max_val) {
+                max_val = matrix[row][col];
+            }
+        }
+    }
+    
+    return max_val;
+}
+
+// Функция для построения результирующей матрицы
+void buildResultMatrix(int n, float A[20][20], float B[20][20]) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            B[i][j] = findMaxInTriangle(n, A, i, j);
+        }
+    }
+}
+
 int main() {
     setlocale(LC_ALL, "Russian");
+    
     int n;
-    printf("Введите размер квадратной матрицы (не более 20): ");
-    int fool_proof = scanf("%d", &n);
-
-    if (fool_proof != 1 || n <= 0 || n > 20) {
-        printf("ошибка ввода данных");
-        return 0;
-    }
-    float main_list[n][n];
-    float res_list[n][n];
-    printf("Введите элементы матрицы %d x %d:\n", n, n);
-    if (scanfMatrix(n, main_list) == 0) {
-        printf("ошибка ввода данных");
-        return 0;
-    }
-
-    float max = main_list[0][0];
-    float pre_max = main_list[0][0];
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if (main_list[i][j] > max) {
-                pre_max = max;
-                max = main_list[i][j];
-            } else if (main_list[i][j] > pre_max && main_list[i][j] < max) {
-                pre_max = main_list[i][j];
-            }
-        }
-    }
-    int flag;
-    if (max == pre_max) {
-        flag = 0;
-    } else {
-        flag = 1;
+    printf("Введите размер квадратной матрицы (макс. 20): ");
+    
+    if (scanf("%d", &n) != 1 || n <= 0 || n > 20) {
+        printf("Ошибка: размер должен быть числом от 1 до 20\n");
+        return 1;
     }
     
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if (i + j >= n) {
-                if (main_list[i][j] == max && flag == 1) {
-                    res_list[i][j] = pre_max;
-                } else {
-                    res_list[i][j] = max;
-                }
-            } else {
-                res_list[i][j] = main_list[i][j];
-            }
-        }
+    // Очистка буфера ввода
+    while (getchar() != '\n');
+    
+    // Объявление матриц
+    float A[20][20];
+    float B[20][20];
+    
+    printf("Введите элементы матрицы A (%d x %d):\n", n, n);
+    if (!inputMatrix(n, A)) {
+        return 1;
     }
     
-    printf("\nМатрица A:\n");
-    printfMatrix(n, main_list);
+    // Вычисляем результирующую матрицу
+    buildResultMatrix(n, A, B);
     
-    printf("\nМатрица B (результат):\n");
-    printfMatrix(n, res_list);
-
-
+    printf("\nМАТРИЦА A (исходная):\n");
+    printMatrix(n, A);
+    
+    printf("\nМАТРИЦА B (результат - максимум в треугольнике):\n");
+    printMatrix(n, B);
+    
     return 0;
 }
