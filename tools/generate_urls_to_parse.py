@@ -15,7 +15,8 @@ def runner(days,league):
     
     
     print("Запуск улучшенного парсера...")
-    with open('./matches_data.json','w'): 
+    with open('./matches_data.json','w') as f:
+        json.dump({"matches": []}, f) 
         all_new_matches = []
         start = time.time()
         for url in urls:

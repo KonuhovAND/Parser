@@ -142,7 +142,7 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
         # Закрываем вкладку и возвращаемся
         driver.close()
         driver.switch_to.window(main_window)
-        driver.refresh()
+        # driver.refresh()
         WebDriverWait(driver,3).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
@@ -261,8 +261,8 @@ def get_js_data_with_selenium(url,league):
                             team_scores = [int(x) for x in match_info['score'].split(":")]
                             lineup_data = parse_match_lineups(driver, match_url,team_scores[0],team_scores[1],team1,team2)
                             match_info["stats"] = lineup_data
-                        
-                        if lineup_data and league in match_url:
+
+                        if lineup_data:
                             matches_data.append(match_info)
                         
 
