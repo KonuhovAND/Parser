@@ -8,7 +8,6 @@ import time
 from tools.is_valid_name import TEAMS, is_valid_player
 from random import randint
 from tools.json_tools.load_existing_data import load_existing_data
-
 from tools.extract_teams_from_match_text import extract_teams_from_match_text
 
 
@@ -172,17 +171,6 @@ def parse_match_lineups(driver, match_url,score_team1,score_team2,team1,team2):
         except:
             pass
         return None
-        # return {
-        #     "team_1": {"lineup": [], "player_count": 0},
-        #     "team_2": {"lineup": [], "player_count": 0},
-        #     "total_players": 0
-        # }
-
-
-
-
-
-
 
 
 
@@ -248,37 +236,33 @@ def get_js_data_with_selenium(url,league):
 
                         if not match_url or match_url in processed_urls or match_url in existing_urls:
                             continue
-                        # if league == "all":
-                        #     continue
-                        # elif league not in match_url:
-                        #     break
-                        processed_urls.add(match_url)
-                        teams = extract_teams_from_match_text(text)
                         
-                        scores = [x for x in text.split() if x.isnumeric() ]
-                        team1 = teams[0]
-                        team2 = teams[1]
-                        match_info = {
-                            "text": text[:100] + "..." if len(text) > 100 else text,
-                            "team1":team1,
-                            "team2":team2,
-                            "score": scores[0] + ":"+ scores[1],
-                            "url": match_url,
-                            # "selector": selector,
-                            "source_url": url  # Добавляем URL источника
-                        }
+                        if league in match_url or league == "all":
+                            
+                            processed_urls.add(match_url)
+                            teams = extract_teams_from_match_text(text)
 
-                        print(f"Найден матч: {match_info['text']}")
+                            scores = [x for x in text.split() if x.isnumeric()]
+                            team1 = teams[0]
+                            team2 = teams[1]
+                            match_info = {
+                                "text": text[:100] + "..." if len(text) > 100 else text,
+                                "team1":team1,
+                                "team2":team2,
+                                "score": scores[0] + ":"+ scores[1],
+                                "url": match_url,
+                                # "selector": selector,
+                                "source_url": url  # Добавляем URL источника
+                            }
+
+                            print(f"Найден матч: {match_info['text']}")
+                            
+                            # Парсим составы
+                            team_scores = [int(x) for x in match_info['score'].split(":")]
+                            lineup_data = parse_match_lineups(driver, match_url,team_scores[0],team_scores[1],team1,team2)
+                            match_info["stats"] = lineup_data
                         
-                        # Парсим составы
-                        team_scores = [int(x) for x in match_info['score'].split(":")]
-                        lineup_data = parse_match_lineups(driver, match_url,team_scores[0],team_scores[1],team1,team2)
-                        match_info["stats"] = lineup_data
-                        
-                        # match_info["processed_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
-                        if league == "all":
-                            matches_data.append(match_info)
-                        elif lineup_data and league in match_url:
+                        if lineup_data and league in match_url:
                             matches_data.append(match_info)
                         
 
@@ -286,12 +270,10 @@ def get_js_data_with_selenium(url,league):
                         continue
                     except Exception as e:
                         print(f"Ошибка обработки элемента {i}: {e}")
-                        #continue
                         break
 
             except Exception as e:
                 print(f"Ошибка с селектором {selector}: {e}")
-                # continue
                 break
 
         return matches_data
