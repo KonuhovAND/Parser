@@ -124,21 +124,6 @@ python main.py
 - `matches_data.json` - JSON formatted match data
 - `hockey_matches.db` - SQLite database
 
-### Python API Integration
-
-```python
-# Import required modules
-from tools.database_tools.generate_db import get_all_matches, get_player_stats
-from tools.json_tools.json_adapter import load_matches_data
-
-# Load and process match data
-matches = get_all_matches()
-top_scorers = get_player_stats()
-
-# Access JSON data
-json_data = load_matches_data()
-print(f"Total matches parsed: {len(json_data['matches'])}")
-```
 
 ## 📁 Project Structure
 
