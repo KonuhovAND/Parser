@@ -3,7 +3,7 @@ import json
 import os
 import re
 from datetime import datetime
-from database_tools.extract_time_from_match_text import extract_time_from_match_text
+from tools.database_tools.extract_time_from_match_text import extract_time_from_match_text
 
 
 def create_hockey_database(json_file_path, db_file_path='hockey_matches.db'):

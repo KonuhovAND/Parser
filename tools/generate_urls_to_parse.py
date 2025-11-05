@@ -1,6 +1,6 @@
-from tools.read_data_from_page import get_js_data_with_selenium, save_to_json
+from tools.read_data_from_page import get_js_data_with_selenium
 import time
-from tools.database_tools.generate_db import * 
+from tools.database_tools.generate_db import *
 from tools.cache_tools.load_from_cache import load_from_cache
 from tools.cache_tools.save_to_cache import save_to_cache
 
