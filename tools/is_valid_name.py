@@ -39,58 +39,110 @@ TEAMS = [
     "Ильвес", "Сторхамар"
 ]
 
+BLACKLIST = [
+    'комета', 'цюрих', 'бельфаст', 'айсберен', 'оденсе', 'фиштаун',
+    'академия', 'красная', 'армия', 'стальные', 'лисы', 'львы',
+    'пингвины', 'медведи', 'собаки', 'тигры', 'волки', 'орлы',
+    'окончен', 'завершен', 'матч', 'игра', 'тайм', 'период',
+    'нк','спб','крылья', 'россия', 'канада', 'сша', 'германия', 'вр', 'зщ', 'нп',
+    'торпедо', 'горький', 'акм', 'ростов', 'динамо', 'химик', 'рязань', 'вдв',
+    'металлург', 'дизель', 'горняк', 'югра', 'магнитка', 'молот', 'челмет',
+    'нефтяник', 'торос', 'звезда', 'зауралье', 'ижсталь', 'сокол', 'барс',
+    'олимпия', 'цск', 'ввс', 'рубин', 'тамбов', 'норильск', 'алтай', 'вмф',
+    'кристалл', 'буран', 'челны', 'ирбис', 'толпар', 'лозанна', 'ингольштадт',
+    'берн', 'комета', 'брно', 'цуг', 'бельфаст', 'джайантс', 'больцано', 'маунтфилд',
+    'фиштаун', 'пингвинз', 'лукко', 'айсберен', 'берлин', 'гренобль'
+]
+
+
+def _check_basic_string_format(name):
+    if not name or len(name) < 3 or len(name) > 50:
+        return False
+    return True
+
+
+def _check_invalid_characters(name):
+    if any(char.isdigit() for char in name):
+        return True
+    
+    # Проверка на спецсимволы
+    if re.search(r'[!@#$%^&*()_+=\[\]{};:"\\|,<>/?]', name):
+        return True
+    
+    return False
+
+
+def _parse_name_words(name):
+    if ' ' not in name:
+        return [name]
+    return name.split()
+
+
+def _validate_word_structure(name):
+    """
+    Проверяет структуру слов в имени (количество и длина).
+    Args:
+        name: Строка с именем для проверки
+    Returns:
+        bool: True если структура валидна, иначе False
+    """
+    words = _parse_name_words(name)
+    
+    # Проверка количества слов
+    if len(words) < 1 or len(words) > 4:
+        return False
+    
+    for word in words:
+        if len(word) < 1:
+            return False
+        if len(word) > 20:
+            return False
+    
+    return True
+
+
+def _check_against_blacklist(name):
+    lower_name = name.lower()
+    
+    for banned in BLACKLIST:
+        if banned in lower_name:
+            return True
+    
+    return False
+
+
+def _check_team_name(name):
+    return name in TEAMS
+
+
+def _check_uppercase_abbreviation(name):
+    if len(name) <= 4 and name.isupper():
+        return True
+    return False
+
+
 def is_valid_player(name):
-    """
-    Простая проверка имени с эвристическими правилами
-    """
     try:
         name = name.strip()
-        if not name or len(name) < 3 or len(name) > 50:
-            return False
-        if any(char.isdigit() for char in name):
-            return False
-        if re.search(r'[!@#$%^&*()_+=\[\]{};:"\\|,<>/?]', name):
-            return False
-        if ' ' not in name:
-            words = [name]
-        else:
-            words = name.split()
         
-        if len(words) < 1 or len(words) > 4:
+        if not _check_basic_string_format(name):
             return False
         
-        for word in words:
-            if len(word) < 1:  # Разрешаем очень короткие слова
-                return False
-            if len(word) > 20:  # Увеличил максимальную длину слова
-                return False
-        
-        blacklist = [
-            'комета', 'цюрих', 'бельфаст', 'айсберен', 'оденсе', 'фиштаун',
-            'академия', 'красная', 'армия', 'стальные', 'лисы', 'львы',
-            'пингвины', 'медведи', 'собаки', 'тигры', 'волки', 'орлы',
-            'окончен', 'завершен', 'матч', 'игра', 'тайм', 'период',
-            'нк','спб','крылья', 'россия', 'канада', 'сша', 'германия', 'вр', 'зщ', 'нп',
-            'торпедо', 'горький', 'акм', 'ростов', 'динамо', 'химик', 'рязань', 'вдв',
-            'металлург', 'дизель', 'горняк', 'югра', 'магнитка', 'молот', 'челмет',
-            'нефтяник', 'торос', 'звезда', 'зауралье', 'ижсталь', 'сокол', 'барс',
-            'олимпия', 'цск', 'ввс', 'рубин', 'тамбов', 'норильск', 'алтай', 'вмф',
-            'кристалл', 'буран', 'челны', 'ирбис', 'толпар', 'лозанна', 'ингольштадт',
-            'берн', 'комета', 'брно', 'цуг', 'бельфаст', 'джайантс', 'больцано', 'маунтфилд',
-            'фиштаун', 'пингвинз', 'лукко', 'айсберен', 'берлин', 'гренобль'
-        ]
-        
-        lower_name = name.lower()
-        for banned in blacklist:
-            if banned in lower_name:
-                return False
-        
-        if name in TEAMS:
+        if _check_invalid_characters(name):
             return False
         
-        if len(name) <= 4 and name.isupper():
+        if not _validate_word_structure(name):
             return False
-            
+        
+        if _check_against_blacklist(name):
+            return False
+        
+        if _check_team_name(name):
+            return False
+        
+        if _check_uppercase_abbreviation(name):
+            return False
+        
         return True
         
     except Exception as e:
