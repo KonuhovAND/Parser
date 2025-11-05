@@ -117,7 +117,7 @@ python running_bot.py
 ### Direct Parser Execution
 Run the parser without Telegram interface:
 ```bash
-python tools/read_data_from_page.py
+python main.py
 ```
 
 **Output Files:**
