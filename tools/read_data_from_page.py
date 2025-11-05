@@ -7,7 +7,8 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 import time
 from tools.is_valid_name import TEAMS, is_valid_player
 from random import randint
-from tools.json_adapter import *
+from tools.json_tools.load_existing_data import load_existing_data
+
 from tools.extract_teams_from_match_text import extract_teams_from_match_text
 
 

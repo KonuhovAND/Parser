@@ -114,13 +114,6 @@ def create_hockey_database(json_file_path, db_file_path='hockey_matches.db'):
             )
         ''')
         
-        def extract_time_from_match_text(match_text):
-            """Extracts time from match text"""
-            if not match_text:
-                return None
-            time_pattern = r'^(\d{1,2}:\d{2})'
-            match = re.match(time_pattern, match_text.strip())
-            return match.group(1) if match else None
         
         def get_or_create_team(team_name):
             """Gets team ID or creates new team"""
