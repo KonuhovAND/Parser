@@ -117,6 +117,7 @@ def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team
                     and len(text) >= 3
                     and len(text.split()) < 3
                 ):
+                    pos = ["нападающий", "защитник", "вратарь"]
                     # Дополнительная проверка: имя не должно быть названием команды
                     if (
                         text not in TEAMS
