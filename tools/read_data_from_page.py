@@ -16,51 +16,21 @@ from tools.extract_teams_from_match_text import extract_teams_from_match_text
 import re
 
 
-def make_teams(player_names):
+def make_teams(player_names, positions):
     team1_lineup = []
     team2_lineup = []
     half_index = len(player_names) // 2
+    dict_pos = {"нп": "Нападающий", "вр": "Вратарь", "зщ": "Защитник"}
+    positions = [dict_pos[f"{pos}"] for pos in positions]
 
     index_of_truth = 0
     for i in range(len(player_names)):
-        if index_of_truth <= i:
-            team1_lineup.append(
-                {"name": player_names[i][0], "position": player_names[i][1]}
-            )
+        if index_of_truth <= half_index:
+            team1_lineup.append({"name": player_names[i], "position": positions[i]})
+            index_of_truth += 1
         else:
-            team2_lineup.append(
-                {"name": player_names[i][0], "position": player_names[i][1]}
-            )
+            team2_lineup.append({"name": player_names[i], "position": positions[i]})
     return team1_lineup, team2_lineup
-
-
-def make_goals(goals_elements_team1, score_team1, score_team2):
-    team_1_players_goals = []
-    team_2_players_goals, kick_offs = [], []
-
-    for element in goals_elements_team1[: (score_team1 + score_team2)]:
-        text = element.text.strip()
-        if (
-            text in [block[0] for block in player_names[: len(player_names) // 2]]
-            and len(team_1_players_goals) <= score_team1
-        ):
-            team_1_players_goals.append(text)
-        elif (
-            text in [block[0] for block in player_names[len(player_names) // 2 :]]
-            and len(team_2_players_goals) <= score_team2
-        ):
-            team_2_players_goals.append(text)
-
-    while len(team_1_players_goals) < score_team1:
-        team_1_players_goals.append(team_1_players_goals[-1])
-
-    while len(team_2_players_goals) < score_team2:
-        team_2_players_goals.append(team_2_players_goals[-1])
-
-    for element in goals_elements_team1[(score_team1 + score_team2) :]:
-        text = element.text.strip()
-        kick_offs.append(text)
-    return team_1_players_goals, team_2_players_goals, kick_offs
 
 
 def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team2):
@@ -80,6 +50,12 @@ def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team
 
         # Ищем все элементы с именами игроков
         player_elements = driver.find_elements(By.CLASS_NAME, "table-item__name")
+        player_positions_elements = driver.find_elements(
+            By.CLASS_NAME, "table-item__amplua"
+        )
+        player_positions = [
+            element.text.strip() for element in player_positions_elements
+        ]
 
         # Ищем элементы с голами
         goals_elements_team1 = driver.find_elements(
@@ -158,18 +134,6 @@ def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team
         for i, element in enumerate(player_elements):
             try:
                 text = element.text.strip()
-
-                player_position_element = driver.find_element(
-                    By.CLASS_NAME, "table-item__amplua"
-                )
-                player_position = player_position_element.text.strip()
-                if player_position == "зщ":
-                    player_position = "Защитник"
-                if player_position == "нп":
-                    player_position = "Нападающий"
-                if player_position == "вр":
-                    player_position = "Вратарь"
-
                 # Улучшенная проверка - используем функцию валидации имен
                 if (
                     text
@@ -178,45 +142,61 @@ def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team
                     and len(text.split()) < 3
                 ):
                     # Дополнительная проверка: имя не должно быть названием команды
-                    if (
-                        text not in TEAMS
-                        and not any(
-                            team_word in text.lower()
-                            for team_word in [
-                                "торпедо",
-                                "акм",
-                                "ростов",
-                                "динамо",
-                                "химик",
-                                "рязань",
-                                "металлург",
-                                "дизель",
-                                "горняк",
-                                "югра",
-                                "магнитка",
-                            ]
-                        )
-                        and text not in player_names
+                    if text not in TEAMS and not any(
+                        team_word in text.lower()
+                        for team_word in [
+                            "торпедо",
+                            "акм",
+                            "ростов",
+                            "динамо",
+                            "химик",
+                            "рязань",
+                            "металлург",
+                            "дизель",
+                            "горняк",
+                            "югра",
+                            "магнитка",
+                        ]
                     ):
-                        player_names.append([text, player_position])
+                        player_names.append(text)
             except Exception as exc:
                 print(f"{exc}")
                 continue
 
         if player_names:
-            team_1_players, team_2_players = make_teams(player_names)
+            team_1_players, team_2_players = make_teams(player_names, player_positions)
 
             """
             тут по разным группам с голам и с отсранениями
             """
-            team_1_players_goals = []
-            team_2_players_goals = []
-            kick_offs = []
-            team_1_players_goals, team_2_players_goals, kick_offs = make_goals(
-                goals_elements_team1, score_team1, score_team2
-            )
 
-        # Закрываем вкладку и возвращаемся
+            team_1_players_goals = []
+            team_2_players_goals, kick_offs = [], []
+
+            for element in goals_elements_team1[: (score_team1 + score_team2)]:
+                text = element.text.strip()
+                if (
+                    text in [block for block in player_names[: len(player_names) // 2]]
+                    and len(team_1_players_goals) <= score_team1
+                ):
+                    team_1_players_goals.append(text)
+                elif (
+                    text in [block for block in player_names[len(player_names) // 2 :]]
+                    and len(team_2_players_goals) <= score_team2
+                ):
+                    team_2_players_goals.append(text)
+
+            while len(team_1_players_goals) < score_team1:
+                team_1_players_goals.append(team_1_players_goals[-1])
+
+            while len(team_2_players_goals) < score_team2:
+                team_2_players_goals.append(team_2_players_goals[-1])
+
+            for element in goals_elements_team1[(score_team1 + score_team2) :]:
+                text = element.text.strip()
+                kick_offs.append(text)
+
+                # Закрываем вкладку и возвращаемся
         driver.close()
         driver.switch_to.window(main_window)
         # driver.refresh()
