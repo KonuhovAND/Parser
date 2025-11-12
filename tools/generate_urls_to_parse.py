@@ -5,10 +5,7 @@ from tools.cache_tools.load_from_cache import load_from_cache
 from tools.cache_tools.save_to_cache import save_to_cache
 from tools.json_tools.save_to_json import save_to_json
 from datetime import datetime, timedelta
-from tools.add_position import (
-    update_db_schema_and_insert_positions,
-    update_json_file,
-)
+from tools.add_position import update_db_schema_and_insert_positions
 
 
 def runner(days, league):

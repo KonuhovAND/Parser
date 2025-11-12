@@ -8,42 +8,6 @@ JSON_PATH = "matches_data.json"
 DB_PATH = "hockey_matches.db"
 
 # Возможные амплуа игроков в хоккее
-POSITIONS = ["Вратарь", "Защитник", "Нападающий"]
-
-
-def add_position_to_players(data):
-    # Добавляем случайное амплуа каждому игроку в JSON данных
-    for match in data.get("matches", []):
-        # Для команд 1 и 2
-        for team_key in ["lineup_team1", "lineup_team2"]:
-            if team_key in match.get("stats", {}):
-                players = match["stats"][team_key]
-                # Формируем список игроков с амплуа
-                players_with_positions = []
-                for player in players:
-                    position = random.choice(POSITIONS)
-                    players_with_positions.append(
-                        {"name": player, "position": position}
-                    )
-                # Заменяем игрока строкой на объект с амплуа
-                match["stats"][team_key] = players_with_positions
-    return data
-
-
-def update_json_file():
-    if not os.path.exists(JSON_PATH):
-        print(f"JSON файл не найден по пути {JSON_PATH}")
-        return
-
-    with open(JSON_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    data = add_position_to_players(data)
-
-    with open(JSON_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-    print("JSON файл успешно обновлен с амплуа игроков.")
 
 
 def update_db_schema_and_insert_positions():
