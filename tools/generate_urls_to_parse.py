@@ -6,7 +6,6 @@ from tools.cache_tools.save_to_cache import save_to_cache
 from tools.json_tools.save_to_json import save_to_json
 from datetime import datetime, timedelta
 from tools.add_position import (
-    add_position_to_players,
     update_db_schema_and_insert_positions,
     update_json_file,
 )
@@ -50,7 +49,6 @@ def runner(days, league):
 
         start = time.time()
         # Вместо файла используем память
-        update_json_file()
 
         create_hockey_database("matches_data.json")
         update_db_schema_and_insert_positions()

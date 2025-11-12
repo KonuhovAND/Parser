@@ -13,10 +13,57 @@ from tools.is_valid_name import TEAMS, is_valid_player
 from random import randint
 from tools.json_tools.load_existing_data import load_existing_data
 from tools.extract_teams_from_match_text import extract_teams_from_match_text
+import re
+
+
+def make_teams(player_names):
+    team1_lineup = []
+    team2_lineup = []
+    half_index = len(player_names) // 2
+
+    index_of_truth = 0
+    for i in range(len(player_names)):
+        if index_of_truth <= i:
+            team1_lineup.append(
+                {"name": player_names[i][0], "position": player_names[i][1]}
+            )
+        else:
+            team2_lineup.append(
+                {"name": player_names[i][0], "position": player_names[i][1]}
+            )
+    return team1_lineup, team2_lineup
+
+
+def make_goals(goals_elements_team1, score_team1, score_team2):
+    team_1_players_goals = []
+    team_2_players_goals, kick_offs = [], []
+
+    for element in goals_elements_team1[: (score_team1 + score_team2)]:
+        text = element.text.strip()
+        if (
+            text in [block[0] for block in player_names[: len(player_names) // 2]]
+            and len(team_1_players_goals) <= score_team1
+        ):
+            team_1_players_goals.append(text)
+        elif (
+            text in [block[0] for block in player_names[len(player_names) // 2 :]]
+            and len(team_2_players_goals) <= score_team2
+        ):
+            team_2_players_goals.append(text)
+
+    while len(team_1_players_goals) < score_team1:
+        team_1_players_goals.append(team_1_players_goals[-1])
+
+    while len(team_2_players_goals) < score_team2:
+        team_2_players_goals.append(team_2_players_goals[-1])
+
+    for element in goals_elements_team1[(score_team1 + score_team2) :]:
+        text = element.text.strip()
+        kick_offs.append(text)
+    return team_1_players_goals, team_2_players_goals, kick_offs
 
 
 def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team2):
-    start_to_parsing_website = time.time()
     """Парсит составы команд на странице матча и разделяет на две команды"""
     try:
         main_window = driver.current_window_handle
@@ -33,23 +80,21 @@ def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team
 
         # Ищем все элементы с именами игроков
         player_elements = driver.find_elements(By.CLASS_NAME, "table-item__name")
-        player_names = []
 
         # Ищем элементы с голами
         goals_elements_team1 = driver.find_elements(
             By.CSS_SELECTOR, ".match-stat__player"
         )
         # Списки для хранения игроков и голов
-        team_1_players_goals = []
-        team_2_players_goals = []
-        kick_offs = []
-
         stadion = ""
         city = ""
         viewers: int = 0
         attendance_percent: int = 0
         max_capacity: int = 0
 
+        """
+        Парсинг стадиона и города
+        """
         try:
             extra_info_elements = driver.find_elements(
                 By.CSS_SELECTOR, ".match-info__extra-row"
@@ -81,7 +126,6 @@ def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team
                     continue
 
                 # Парсим город из текста
-                import re
 
                 # Ищем город в скобках: "Мегаспорт (Москва, Россия)"
                 city_match = re.search(r"\((.*?),\s*[А-Яа-я]+\)", full_text)
@@ -105,11 +149,27 @@ def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team
         except Exception as e:
             print(f"Ошибка в парсинге доп статистики: {e}")
 
-            team_1_players, team_2_players = [], []
+        """
+        Парсим игроков и рассыкидываем их по командам
+        """
+        player_names = []
+        team_1_players, team_2_players = [], []
         print("Trying to parse players...")
         for i, element in enumerate(player_elements):
             try:
                 text = element.text.strip()
+
+                player_position_element = driver.find_element(
+                    By.CLASS_NAME, "table-item__amplua"
+                )
+                player_position = player_position_element.text.strip()
+                if player_position == "зщ":
+                    player_position = "Защитник"
+                if player_position == "нп":
+                    player_position = "Нападающий"
+                if player_position == "вр":
+                    player_position = "Вратарь"
+
                 # Улучшенная проверка - используем функцию валидации имен
                 if (
                     text
@@ -117,7 +177,6 @@ def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team
                     and len(text) >= 3
                     and len(text.split()) < 3
                 ):
-                    pos = ["нападающий", "защитник", "вратарь"]
                     # Дополнительная проверка: имя не должно быть названием команды
                     if (
                         text not in TEAMS
@@ -139,33 +198,23 @@ def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team
                         )
                         and text not in player_names
                     ):
-                        player_names.append(text)
-            except:
+                        player_names.append([text, player_position])
+            except Exception as exc:
+                print(f"{exc}")
                 continue
 
         if player_names:
-            half_index = len(player_names) // 2
-            team_1_players = player_names[:half_index]
-            team_2_players = player_names[half_index:]
+            team_1_players, team_2_players = make_teams(player_names)
 
-            for element in goals_elements_team1[: (score_team1 + score_team2)]:
-                text = element.text.strip()
-                if text in team_1_players and len(team_1_players_goals) <= score_team1:
-                    team_1_players_goals.append(text)
-                elif (
-                    text in team_2_players and len(team_2_players_goals) <= score_team2
-                ):
-                    team_2_players_goals.append(text)
-
-            while len(team_1_players_goals) < score_team1:
-                team_1_players_goals.append(team_1_players_goals[-1])
-
-            while len(team_2_players_goals) < score_team2:
-                team_2_players_goals.append(team_2_players_goals[-1])
-
-            for element in goals_elements_team1[(score_team1 + score_team2) :]:
-                text = element.text.strip()
-                kick_offs.append(text)
+            """
+            тут по разным группам с голам и с отсранениями
+            """
+            team_1_players_goals = []
+            team_2_players_goals = []
+            kick_offs = []
+            team_1_players_goals, team_2_players_goals, kick_offs = make_goals(
+                goals_elements_team1, score_team1, score_team2
+            )
 
         # Закрываем вкладку и возвращаемся
         driver.close()
@@ -176,7 +225,6 @@ def parse_match_lineups(driver, match_url, score_team1, score_team2, team1, team
         )
         time.sleep(1)
         print("%DONE%")
-        # Заменить условие на:
         return {
             "stadion": stadion or "Неизвестно",
             "city": city or "Неизвестно",
