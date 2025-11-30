@@ -8,7 +8,7 @@ __pycache__/
 token.py          # Add this line
 tg_tools/         # This should work for the whole folder
 .env.local
-
+.json
 # Python
 __pycache__/
 *.pyc
